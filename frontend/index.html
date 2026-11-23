@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#09090b">
+    <title>StreamFlix</title>
+    <link rel="stylesheet" href="/frontend/styles.css">
+</head>
+<body>
+    <div class="shell">
+        <aside class="sidebar" aria-label="Main navigation">
+            <a class="brand" href="/" aria-label="StreamFlix home">
+                <span class="brand-mark" aria-hidden="true">S</span>
+                <span>StreamFlix</span>
+            </a>
+            <nav>
+                <button class="nav-item active" type="button" data-view="home">
+                    <span aria-hidden="true">&#8962;</span><span>Home</span>
+                </button>
+                <button class="nav-item" type="button" data-view="search">
+                    <span aria-hidden="true">&#9906;</span><span>Search</span>
+                </button>
+                <button class="nav-item" type="button" data-view="uploads">
+                    <span aria-hidden="true">&#8593;</span><span>Uploads</span>
+                </button>
+            </nav>
+        </aside>
+
+        <main>
+            <header class="topbar">
+                <button class="brand mobile-brand" type="button" data-view="home" aria-label="Home">
+                    <span class="brand-mark">S</span>
+                    <span>StreamFlix</span>
+                </button>
+                <form class="searchbar" id="search-form" role="search">
+                    <label class="sr-only" for="search-input">Search media</label>
+                    <span aria-hidden="true">&#9906;</span>
+                    <input id="search-input" name="q" type="search" placeholder="Search movies and songs" autocomplete="off">
+                    <button type="submit">Search</button>
+                </form>
+                <button class="upload-button" id="open-upload" type="button">
+                    <span aria-hidden="true">+</span><span>Upload</span>
+                </button>
+            </header>
+
+            <div class="content">
+                <section id="hero" class="hero">
+                    <div class="hero-copy">
+                        <p class="eyebrow">Now streaming</p>
+                        <h1>Your media,<br>your way.</h1>
+                        <p>Search your library or upload a movie, song, or show from any device.</p>
+                        <button class="primary-button" id="hero-upload" type="button">Upload media</button>
+                    </div>
+                    <div class="hero-art" aria-hidden="true">
+                        <div class="orb orb-one"></div>
+                        <div class="orb orb-two"></div>
+                        <div class="play-ring">&#9654;</div>
+                    </div>
+                </section>
+
+                <section class="library-section">
+                    <div class="section-heading">
+                        <div>
+                            <p class="eyebrow" id="section-kicker">Library</p>
+                            <h2 id="section-title">Recently uploaded</h2>
+                        </div>
+                        <button class="text-button" id="clear-search" type="button" hidden>Clear search</button>
+                    </div>
+                    <div class="status" id="status" role="status"></div>
+                    <div class="media-grid" id="media-grid"></div>
+                </section>
+            </div>
+        </main>
+    </div>
+
+    <nav class="mobile-nav" aria-label="Mobile navigation">
+        <button class="active" type="button" data-view="home"><span aria-hidden="true">&#8962;</span><span>Home</span></button>
+        <button type="button" data-view="search"><span aria-hidden="true">&#9906;</span><span>Search</span></button>
+        <button type="button" data-view="uploads"><span aria-hidden="true">&#8593;</span><span>Uploads</span></button>
+    </nav>
+
+    <dialog id="upload-dialog" class="dialog">
+        <form id="upload-form">
+            <div class="dialog-heading">
+                <div>
+                    <p class="eyebrow">Add to library</p>
+                    <h2>Upload media</h2>
+                </div>
+                <button class="icon-button" id="close-upload" type="button" aria-label="Close">&times;</button>
+            </div>
+            <div class="upload-tabs" role="tablist" aria-label="Upload type">
+                <button class="upload-tab active" id="file-tab" type="button" role="tab" aria-selected="true">Choose file</button>
+                <button class="upload-tab" id="record-tab" type="button" role="tab" aria-selected="false">Record audio</button>
+            </div>
+            <div id="file-upload-panel" role="tabpanel" aria-labelledby="file-tab">
+                <label class="drop-zone" id="drop-zone" for="file-input">
+                    <input id="file-input" name="file" type="file" accept=".mp3,.mp4,.m4a,.wav,.webm,.ogg,.aac,.flac,audio/*,video/*">
+                    <span class="upload-icon" aria-hidden="true">&#8593;</span>
+                    <strong id="file-label">Choose a song or media file</strong>
+                    <small>MP3, M4A, WAV, OGG, AAC, FLAC, MP4, or WebM</small>
+                </label>
+            </div>
+            <div id="record-upload-panel" role="tabpanel" aria-labelledby="record-tab" hidden>
+                <div class="record-panel">
+                    <div class="record-status">
+                        <span class="record-dot" id="record-dot" aria-hidden="true"></span>
+                        <strong id="record-label">Microphone ready</strong>
+                        <time id="record-time">00:00</time>
+                    </div>
+                    <audio id="recording-preview" controls hidden></audio>
+                    <div class="record-actions">
+                        <button class="secondary-button" id="start-recording" type="button">Start recording</button>
+                        <button class="primary-button" id="stop-recording" type="button" disabled>Stop</button>
+                    </div>
+                </div>
+            </div>
+            <div class="upload-progress" id="upload-progress" hidden>
+                <div class="progress-track"><span id="progress-bar"></span></div>
+                <small id="progress-label">Uploading...</small>
+            </div>
+            <button class="primary-button full-button" id="upload-submit" type="submit" disabled>Upload file</button>
+        </form>
+    </dialog>
+
+    <dialog id="player-dialog" class="dialog player-dialog">
+        <div class="dialog-heading">
+            <div>
+                <p class="eyebrow">Now playing</p>
+                <h2 id="player-title">Media</h2>
+            </div>
+            <button class="icon-button" id="close-player" type="button" aria-label="Close">&times;</button>
+        </div>
+        <video id="video-player" controls playsinline></video>
+        <audio id="audio-player" controls></audio>
+    </dialog>
+
+    <script src="/frontend/app.js"></script>
+</body>
+</html>

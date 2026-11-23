@@ -8,6 +8,7 @@ const app = express();
 const port = process.env.PORT || 3000;
 const uploadsDirectory = path.join(__dirname, 'uploads');
 const mongoUri = 'mongodb://localhost:27017/streamingAPI';
+const mediaExtensions = new Set(['.mp3', '.m4a', '.wav', '.ogg', '.aac', '.flac', '.mp4', '.webm']);
 
 // MongoDB connection
 const db = mongoose.connection;
@@ -24,11 +25,26 @@ const storage = multer.diskStorage({
         cb(null, `${Date.now()}-${path.basename(file.originalname)}`);
     }
 });
-const upload = multer({ storage: storage });
+const upload = multer({
+    storage,
+    limits: { fileSize: 500 * 1024 * 1024 },
+    fileFilter: (req, file, cb) => {
+        const extension = path.extname(file.originalname).toLowerCase();
+        if (!mediaExtensions.has(extension) || !/^(audio|video)\//.test(file.mimetype)) {
+            return cb(new multer.MulterError('LIMIT_UNEXPECTED_FILE', 'file'));
+        }
+        cb(null, true);
+    }
+});
 
 // Middleware
 app.use(express.json());
 app.use(express.static(uploadsDirectory));
+app.use('/frontend', express.static(path.join(__dirname, 'frontend')));
+
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'frontend', 'index.html'));
+});
 
 function escapeRegex(value) {
     return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -41,7 +57,10 @@ function getContentType(filePath) {
         '.mp4': 'video/mp4',
         '.m4a': 'audio/mp4',
         '.wav': 'audio/wav',
-        '.webm': 'video/webm'
+        '.webm': 'video/webm',
+        '.ogg': 'audio/ogg',
+        '.aac': 'audio/aac',
+        '.flac': 'audio/flac'
     };
 
     return contentTypes[extension] || 'application/octet-stream';
@@ -84,7 +103,20 @@ app.get('/search', async (req, res) => {
 });
 
 // File upload endpoint
-app.post('/upload', upload.single('file'), (req, res) => {
+app.post('/upload', (req, res, next) => {
+    upload.single('file')(req, res, (error) => {
+        if (error instanceof multer.MulterError) {
+            const message = error.code === 'LIMIT_FILE_SIZE'
+                ? 'File is too large'
+                : 'Only audio and video media files are allowed';
+            return res.status(error.code === 'LIMIT_FILE_SIZE' ? 413 : 400).json({ error: message });
+        }
+        if (error) {
+            return res.status(400).json({ error: 'Upload failed' });
+        }
+        next();
+    });
+}, (req, res) => {
     if (!req.file) {
         return res.status(400).json({ error: 'A file is required' });
     }

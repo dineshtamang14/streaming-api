@@ -68,6 +68,10 @@ Content-Type: multipart/form-data
 
 Send the file in a multipart field named `file`.
 
+Supported formats include MP3, M4A, WAV, OGG, AAC, FLAC, MP4, and WebM.
+Media files are limited to 500 MB. Browser recordings are uploaded as WebM,
+OGG, or M4A depending on browser support.
+
 Example:
 
 ```bash

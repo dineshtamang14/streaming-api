@@ -44,9 +44,11 @@ npm.cmd start
 | Method | Endpoint | Description |
 | --- | --- | --- |
 | `GET` | `/search?q=<text>` | Search the MongoDB `videos` collection by title |
-| `POST` | `/upload` | Upload one audio or video file |
+| `POST` | `/upload` | Upload one song, recording, or media file |
 | `GET` | `/stream/:filename` | Stream an uploaded file |
 | `GET` | `/:filename` | Serve an uploaded file directly |
+| `GET` | `/frontend/*` | Serve the responsive web frontend assets |
+| `GET` | `/` | Open the responsive web frontend |
 
 See [API_DOCUMENTATION.md](API_DOCUMENTATION.md) for request examples,
 responses, status codes, and range streaming details.
