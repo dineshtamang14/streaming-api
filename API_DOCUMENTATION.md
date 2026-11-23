@@ -72,6 +72,53 @@ Supported formats include MP3, M4A, WAV, OGG, AAC, FLAC, MP4, and WebM.
 Media files are limited to 500 MB. Browser recordings are uploaded as WebM,
 OGG, or M4A depending on browser support.
 
+### Upload a document
+
+```http
+POST /upload/document
+Content-Type: multipart/form-data
+```
+
+Send the file in a multipart field named `document`. Supported formats are PDF,
+DOC, DOCX, TXT, CSV, XLS, XLSX, PPT, PPTX, RTF, JPG, JPEG, and PNG. Document
+uploads are limited to 100 MB.
+
+```bash
+curl -X POST \
+  -F "document=@./report.pdf" \
+  http://localhost:3000/upload/document
+```
+
+Successful response (`200 OK`):
+
+```json
+{
+  "message": "Document uploaded successfully",
+  "document": {
+    "filename": "1715600000000-report.pdf",
+    "originalname": "report.pdf",
+    "size": 1048576
+  }
+}
+```
+
+### Download a document
+
+```http
+GET /documents/:filename
+```
+
+```bash
+curl http://localhost:3000/documents/1715600000000-report.pdf --output report.pdf
+```
+
+Responses:
+
+- `200 OK` for an existing document
+- `400 Bad Request` for an invalid filename
+- `404 Not Found` for a missing document
+- `413 Payload Too Large` for a document over 100 MB
+
 Example:
 
 ```bash

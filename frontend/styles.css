@@ -229,7 +229,7 @@ main { min-width: 0; }
 .drop-zone.dragging { border-color: var(--accent); background: rgba(139,92,246,.12); }
 .upload-icon { display: grid; width: 48px; height: 48px; margin-bottom: 12px; place-items: center; border-radius: 50%; background: var(--accent); font-size: 22px; }
 .drop-zone small { margin-top: 6px; color: var(--muted); }
-.upload-tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 20px; padding: 4px; border-radius: 10px; background: var(--surface); }
+.upload-tabs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-top: 20px; padding: 4px; border-radius: 10px; background: var(--surface); }
 .upload-tab { min-height: 38px; border: 0; border-radius: 8px; color: var(--muted); background: transparent; font-weight: 700; }
 .upload-tab.active { color: var(--text); background: var(--surface-2); }
 .record-panel { margin: 16px 0; padding: 18px; border: 1px solid var(--border); border-radius: 14px; background: var(--surface); }

@@ -92,6 +92,7 @@
             <div class="upload-tabs" role="tablist" aria-label="Upload type">
                 <button class="upload-tab active" id="file-tab" type="button" role="tab" aria-selected="true">Choose file</button>
                 <button class="upload-tab" id="record-tab" type="button" role="tab" aria-selected="false">Record audio</button>
+                <button class="upload-tab" id="document-tab" type="button" role="tab" aria-selected="false">Document</button>
             </div>
             <div id="file-upload-panel" role="tabpanel" aria-labelledby="file-tab">
                 <label class="drop-zone" id="drop-zone" for="file-input">
@@ -113,6 +114,14 @@
                         <button class="secondary-button" id="start-recording" type="button">Start recording</button>
                         <button class="primary-button" id="stop-recording" type="button" disabled>Stop</button>
                     </div>
+                </div>
+                <div id="document-upload-panel" role="tabpanel" aria-labelledby="document-tab" hidden>
+                    <label class="drop-zone" id="document-drop-zone" for="document-input">
+                        <input id="document-input" name="document" type="file" accept=".pdf,.doc,.docx,.txt,.csv,.xls,.xlsx,.ppt,.pptx,.rtf,.jpg,.jpeg,.png,application/pdf">
+                        <span class="upload-icon" aria-hidden="true">&#9776;</span>
+                        <strong id="document-label">Choose a document</strong>
+                        <small>PDF, Word, Excel, PowerPoint, TXT, CSV, RTF, JPG, or PNG</small>
+                    </label>
                 </div>
             </div>
             <div class="upload-progress" id="upload-progress" hidden>

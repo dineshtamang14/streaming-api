@@ -22,6 +22,7 @@ const playerTitle = document.querySelector('#player-title');
 let recentUploads = loadRecentUploads();
 let droppedFile = null;
 let recordingFile = null;
+let documentFile = null;
 let mediaRecorder = null;
 let recordingChunks = [];
 let recordingStream = null;
@@ -44,6 +45,10 @@ function isAudio(fileName) {
     return /\.(mp3|m4a|wav|ogg|aac|flac|webm)$/i.test(fileName);
 }
 
+function isDocument(fileName) {
+    return /\.(pdf|doc|docx|txt|csv|xls|xlsx|ppt|pptx|rtf|jpg|jpeg|png)$/i.test(fileName);
+}
+
 function escapeHtml(value) {
     const element = document.createElement('span');
     element.textContent = value;
@@ -62,23 +67,31 @@ function renderMedia(items) {
 
     items.forEach((item) => {
         const name = item.filename || item.title || item.originalname || 'Untitled media';
-        const streamUrl = item.filename ? `/stream/${encodeURIComponent(item.filename)}` : null;
+        const streamUrl = item.filename
+            ? (isDocument(item.filename)
+                ? `/documents/${encodeURIComponent(item.filename)}`
+                : `/stream/${encodeURIComponent(item.filename)}`)
+            : null;
         const card = document.createElement('article');
         card.className = 'media-card';
 
         const preview = document.createElement('button');
         preview.type = 'button';
         preview.className = `card-preview${isAudio(name) ? ' audio' : ''}`;
-        preview.textContent = isAudio(name) ? '\u266b' : '\u25b6';
-        preview.setAttribute('aria-label', `Play ${name}`);
+        preview.textContent = isDocument(name) ? '\u9776' : isAudio(name) ? '\u266b' : '\u25b6';
+        preview.setAttribute('aria-label', isDocument(name) ? `Download ${name}` : `Play ${name}`);
 
         const body = document.createElement('div');
         body.className = 'card-body';
-        body.innerHTML = `<strong title="${escapeHtml(name)}">${escapeHtml(name)}</strong><small>${isAudio(name) ? 'Audio' : 'Video'}</small>`;
+        body.innerHTML = `<strong title="${escapeHtml(name)}">${escapeHtml(name)}</strong><small>${isDocument(name) ? 'Document' : isAudio(name) ? 'Audio' : 'Video'}</small>`;
 
         preview.addEventListener('click', () => {
             if (!streamUrl) {
                 status.textContent = 'This search result has no playable filename.';
+                return;
+            }
+            if (isDocument(name)) {
+                window.open(streamUrl, '_blank', 'noopener');
                 return;
             }
             openPlayer(name, streamUrl);
@@ -183,8 +196,12 @@ document.querySelector('#close-player').addEventListener('click', () => {
 
 const fileTab = document.querySelector('#file-tab');
 const recordTab = document.querySelector('#record-tab');
+const documentTab = document.querySelector('#document-tab');
 const fileUploadPanel = document.querySelector('#file-upload-panel');
 const recordUploadPanel = document.querySelector('#record-upload-panel');
+const documentUploadPanel = document.querySelector('#document-upload-panel');
+const documentInput = document.querySelector('#document-input');
+const documentLabel = document.querySelector('#document-label');
 const startRecording = document.querySelector('#start-recording');
 const stopRecording = document.querySelector('#stop-recording');
 const recordDot = document.querySelector('#record-dot');
@@ -194,17 +211,26 @@ const recordingPreview = document.querySelector('#recording-preview');
 
 function selectUploadMode(mode) {
     const recording = mode === 'record';
-    fileTab.classList.toggle('active', !recording);
+    const documentMode = mode === 'document';
+    fileTab.classList.toggle('active', mode === 'file');
     recordTab.classList.toggle('active', recording);
-    fileTab.setAttribute('aria-selected', String(!recording));
+    documentTab.classList.toggle('active', documentMode);
+    fileTab.setAttribute('aria-selected', String(mode === 'file'));
     recordTab.setAttribute('aria-selected', String(recording));
-    fileUploadPanel.hidden = recording;
+    documentTab.setAttribute('aria-selected', String(documentMode));
+    fileUploadPanel.hidden = mode !== 'file';
     recordUploadPanel.hidden = !recording;
-    uploadSubmit.disabled = recording ? !recordingFile : !(droppedFile || fileInput.files[0]);
+    documentUploadPanel.hidden = !documentMode;
+    uploadSubmit.disabled = recording
+        ? !recordingFile
+        : documentMode
+            ? !documentFile
+            : !(droppedFile || fileInput.files[0]);
 }
 
 fileTab.addEventListener('click', () => selectUploadMode('file'));
 recordTab.addEventListener('click', () => selectUploadMode('record'));
+documentTab.addEventListener('click', () => selectUploadMode('document'));
 
 function updateRecordingTime() {
     const elapsed = Math.floor((Date.now() - recordingStartedAt) / 1000);
@@ -298,15 +324,45 @@ dropZone.addEventListener('drop', (event) => {
     uploadSubmit.disabled = false;
 });
 
+documentInput.addEventListener('change', () => {
+    if (!documentInput.files.length) return;
+    documentFile = documentInput.files[0];
+    documentLabel.textContent = documentFile.name;
+    uploadSubmit.disabled = false;
+});
+
+const documentDropZone = document.querySelector('#document-drop-zone');
+['dragenter', 'dragover'].forEach((eventName) => {
+    documentDropZone.addEventListener(eventName, (event) => {
+        event.preventDefault();
+        documentDropZone.classList.add('dragging');
+    });
+});
+['dragleave', 'drop'].forEach((eventName) => {
+    documentDropZone.addEventListener(eventName, (event) => {
+        event.preventDefault();
+        documentDropZone.classList.remove('dragging');
+    });
+});
+documentDropZone.addEventListener('drop', (event) => {
+    if (!event.dataTransfer.files.length) return;
+    documentFile = event.dataTransfer.files[0];
+    documentLabel.textContent = documentFile.name;
+    uploadSubmit.disabled = false;
+});
+
 uploadForm.addEventListener('submit', (event) => {
     event.preventDefault();
-    const file = recordingFile || droppedFile || fileInput.files[0];
+    const isDocumentUpload = documentTab.classList.contains('active');
+    const file = isDocumentUpload
+        ? documentFile
+        : recordingFile || droppedFile || fileInput.files[0];
     if (!file) return;
 
     const formData = new FormData();
-    formData.append('file', file);
+    formData.append(isDocumentUpload ? 'document' : 'file', file);
     const xhr = new XMLHttpRequest();
-    xhr.open('POST', '/upload');
+    xhr.open('POST', isDocumentUpload ? '/upload/document' : '/upload');
 
     uploadSubmit.disabled = true;
     uploadProgress.hidden = false;
@@ -327,7 +383,7 @@ uploadForm.addEventListener('submit', (event) => {
         }
 
         if (xhr.status >= 200 && xhr.status < 300) {
-            const upload = result.file;
+            const upload = result.document || result.file;
             recentUploads = [upload, ...recentUploads.filter((item) => item.filename !== upload.filename)];
             saveRecentUploads();
             progressLabel.textContent = 'Upload complete';
@@ -337,6 +393,9 @@ uploadForm.addEventListener('submit', (event) => {
                 uploadForm.reset();
                 droppedFile = null;
                 recordingFile = null;
+                documentFile = null;
+                documentInput.value = '';
+                documentLabel.textContent = 'Choose a document';
                 recordingPreview.removeAttribute('src');
                 recordingPreview.hidden = true;
                 fileLabel.textContent = 'Choose a media file';

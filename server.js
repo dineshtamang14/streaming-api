@@ -7,14 +7,31 @@ const fs = require('fs');
 const app = express();
 const port = process.env.PORT || 3000;
 const uploadsDirectory = path.join(__dirname, 'uploads');
+const documentsDirectory = path.join(uploadsDirectory, 'documents');
 const mongoUri = 'mongodb://localhost:27017/streamingAPI';
 const mediaExtensions = new Set(['.mp3', '.m4a', '.wav', '.ogg', '.aac', '.flac', '.mp4', '.webm']);
+const documentExtensions = new Map([
+    ['.pdf', 'application/pdf'],
+    ['.doc', 'application/msword'],
+    ['.docx', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'],
+    ['.txt', 'text/plain'],
+    ['.csv', 'text/csv'],
+    ['.xls', 'application/vnd.ms-excel'],
+    ['.xlsx', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'],
+    ['.ppt', 'application/vnd.ms-powerpoint'],
+    ['.pptx', 'application/vnd.openxmlformats-officedocument.presentationml.presentation'],
+    ['.rtf', 'application/rtf'],
+    ['.jpg', 'image/jpeg'],
+    ['.jpeg', 'image/jpeg'],
+    ['.png', 'image/png']
+]);
 
 // MongoDB connection
 const db = mongoose.connection;
 db.on('error', console.error.bind(console, 'MongoDB connection error:'));
 
 fs.mkdirSync(uploadsDirectory, { recursive: true });
+fs.mkdirSync(documentsDirectory, { recursive: true });
 
 // Multer setup for file uploads
 const storage = multer.diskStorage({
@@ -32,6 +49,26 @@ const upload = multer({
         const extension = path.extname(file.originalname).toLowerCase();
         if (!mediaExtensions.has(extension) || !/^(audio|video)\//.test(file.mimetype)) {
             return cb(new multer.MulterError('LIMIT_UNEXPECTED_FILE', 'file'));
+        }
+        cb(null, true);
+    }
+});
+
+const documentStorage = multer.diskStorage({
+    destination: (req, file, cb) => cb(null, documentsDirectory),
+    filename: (req, file, cb) => {
+        cb(null, `${Date.now()}-${path.basename(file.originalname)}`);
+    }
+});
+
+const documentUpload = multer({
+    storage: documentStorage,
+    limits: { fileSize: 100 * 1024 * 1024 },
+    fileFilter: (req, file, cb) => {
+        const extension = path.extname(file.originalname).toLowerCase();
+        const mimeAllowed = documentExtensions.has(extension);
+        if (!mimeAllowed) {
+            return cb(new multer.MulterError('LIMIT_UNEXPECTED_FILE', 'document'));
         }
         cb(null, true);
     }
@@ -122,6 +159,48 @@ app.post('/upload', (req, res, next) => {
     }
 
     res.json({ message: 'File uploaded successfully', file: req.file });
+});
+
+app.post('/upload/document', (req, res, next) => {
+    documentUpload.single('document')(req, res, (error) => {
+        if (error instanceof multer.MulterError) {
+            const message = error.code === 'LIMIT_FILE_SIZE'
+                ? 'Document is too large'
+                : 'Only PDF, Office, text, CSV, RTF, JPG, or PNG documents are allowed';
+            return res.status(error.code === 'LIMIT_FILE_SIZE' ? 413 : 400).json({ error: message });
+        }
+        if (error) {
+            return res.status(400).json({ error: 'Document upload failed' });
+        }
+        next();
+    });
+}, (req, res) => {
+    if (!req.file) {
+        return res.status(400).json({ error: 'A document is required' });
+    }
+
+    res.status(200).json({
+        message: 'Document uploaded successfully',
+        document: req.file
+    });
+});
+
+app.get('/documents/:filename', (req, res) => {
+    const fileName = path.basename(req.params.filename);
+    if (fileName !== req.params.filename) {
+        return res.status(400).json({ error: 'Invalid document name' });
+    }
+
+    const filePath = path.join(documentsDirectory, fileName);
+    fs.stat(filePath, (error, stat) => {
+        if (error || !stat.isFile()) {
+            return res.status(404).json({ error: 'Document not found' });
+        }
+
+        res.set('Content-Type', documentExtensions.get(path.extname(fileName).toLowerCase()) ||
+            'application/octet-stream');
+        return res.download(filePath, fileName);
+    });
 });
 
 // Video/Audio streaming endpoint
