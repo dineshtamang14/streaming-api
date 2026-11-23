@@ -28,6 +28,17 @@ npm.cmd install
 
 ## Running the API
 
+Create a `.env` file in the project root. Set `MONGODB_URI` to your MongoDB
+connection string and optionally set `PORT`:
+
+```text
+MONGODB_URI=mongodb+srv://<username>:<password>@<cluster-host>/<database>
+PORT=3000
+```
+
+The included `.env.example` shows the required format. Never commit `.env`;
+it is ignored by Git.
+
 ```bash
 npm start
 ```

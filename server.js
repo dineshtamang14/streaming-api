@@ -3,6 +3,8 @@
  * shared middleware, frontend/static assets, database lifecycle, route mounting,
  * and HTTP server startup.
  */
+require('dotenv').config();
+
 const express = require('express');
 const path = require('path');
 const { db, connectDatabase } = require('./config/database');
