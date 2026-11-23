@@ -27,6 +27,7 @@ let documentFile = null;
 let documentFiles = [];
 let imageFile = null;
 let imageFiles = [];
+let movieFiles = [];
 let activeLibraryFilter = 'all';
 let mediaRecorder = null;
 let recordingChunks = [];
@@ -98,12 +99,13 @@ function renderMedia(items) {
 
     filteredItems.forEach((item) => {
         const name = item.filename || item.title || item.originalname || 'Untitled media';
-        const category = getCategory(name);
+        const category = item.category || getCategory(name);
         let streamUrl = null;
         if (item.filename) {
             if (category === 'document') streamUrl = `/documents/${encodeURIComponent(item.filename)}`;
             else if (category === 'image') streamUrl = `/images/${encodeURIComponent(item.filename)}`;
             else if (category === 'audio') streamUrl = `/audio/file/${encodeURIComponent(item.filename)}`;
+            else if (category === 'movie') streamUrl = `/movie/file/${encodeURIComponent(item.filename)}`;
             else streamUrl = `/stream/${encodeURIComponent(item.filename)}`;
         }
         const card = document.createElement('article');
@@ -144,6 +146,10 @@ function renderMedia(items) {
             }
             if (category === 'image') {
                 openImage(name, streamUrl);
+                return;
+            }
+            if (category === 'movie') {
+                window.location.href = `/watch/${encodeURIComponent(item.filename)}`;
                 return;
             }
             openPlayer(name, streamUrl);
@@ -377,14 +383,20 @@ const fileTab = document.querySelector('#file-tab');
 const recordTab = document.querySelector('#record-tab');
 const documentTab = document.querySelector('#document-tab');
 const imageTab = document.querySelector('#image-tab');
+const movieTab = document.querySelector('#movie-tab');
 const fileUploadPanel = document.querySelector('#file-upload-panel');
 const recordUploadPanel = document.querySelector('#record-upload-panel');
 const documentUploadPanel = document.querySelector('#document-upload-panel');
 const imageUploadPanel = document.querySelector('#image-upload-panel');
+const movieUploadPanel = document.querySelector('#movie-upload-panel');
 const documentInput = document.querySelector('#document-input');
 const documentLabel = document.querySelector('#document-label');
 const imageInput = document.querySelector('#image-input');
 const imageLabel = document.querySelector('#image-label');
+const movieInput = document.querySelector('#movie-input');
+const movieLabel = document.querySelector('#movie-label');
+const movieTitle = document.querySelector('#movie-title');
+const movieDescription = document.querySelector('#movie-description');
 const startRecording = document.querySelector('#start-recording');
 const stopRecording = document.querySelector('#stop-recording');
 const recordDot = document.querySelector('#record-dot');
@@ -396,31 +408,38 @@ function selectUploadMode(mode) {
     const recording = mode === 'record';
     const documentMode = mode === 'document';
     const imageMode = mode === 'image';
+    const movieMode = mode === 'movie';
     fileTab.classList.toggle('active', mode === 'file');
     recordTab.classList.toggle('active', recording);
     documentTab.classList.toggle('active', documentMode);
     imageTab.classList.toggle('active', imageMode);
+    movieTab.classList.toggle('active', movieMode);
     fileTab.setAttribute('aria-selected', String(mode === 'file'));
     recordTab.setAttribute('aria-selected', String(recording));
     documentTab.setAttribute('aria-selected', String(documentMode));
     imageTab.setAttribute('aria-selected', String(imageMode));
+    movieTab.setAttribute('aria-selected', String(movieMode));
     fileUploadPanel.hidden = mode !== 'file';
     recordUploadPanel.hidden = !recording;
     documentUploadPanel.hidden = !documentMode;
     imageUploadPanel.hidden = !imageMode;
+    movieUploadPanel.hidden = !movieMode;
     uploadSubmit.disabled = recording
         ? !recordingFile
         : documentMode
             ? documentFiles.length === 0
             : imageMode
                 ? imageFiles.length === 0
-                : droppedFiles.length === 0;
+                : movieMode
+                    ? movieFiles.length === 0
+                    : droppedFiles.length === 0;
 }
 
 fileTab.addEventListener('click', () => selectUploadMode('file'));
 recordTab.addEventListener('click', () => selectUploadMode('record'));
 documentTab.addEventListener('click', () => selectUploadMode('document'));
 imageTab.addEventListener('click', () => selectUploadMode('image'));
+movieTab.addEventListener('click', () => selectUploadMode('movie'));
 
 function updateRecordingTime() {
     const elapsed = Math.floor((Date.now() - recordingStartedAt) / 1000);
@@ -583,10 +602,48 @@ imageDropZone.addEventListener('drop', (event) => {
     uploadSubmit.disabled = false;
 });
 
+movieInput.addEventListener('change', () => {
+    if (!movieInput.files.length) return;
+    movieFiles = Array.from(movieInput.files);
+    movieLabel.textContent = movieFiles.length === 1
+        ? movieFiles[0].name
+        : `${movieFiles.length} movies selected`;
+    if (!movieTitle.value && movieFiles.length === 1) {
+        movieTitle.value = movieFiles[0].name.replace(/\.[^.]+$/, '');
+    }
+    uploadSubmit.disabled = false;
+});
+
+const movieDropZone = document.querySelector('#movie-drop-zone');
+['dragenter', 'dragover'].forEach((eventName) => {
+    movieDropZone.addEventListener(eventName, (event) => {
+        event.preventDefault();
+        movieDropZone.classList.add('dragging');
+    });
+});
+['dragleave', 'drop'].forEach((eventName) => {
+    movieDropZone.addEventListener(eventName, (event) => {
+        event.preventDefault();
+        movieDropZone.classList.remove('dragging');
+    });
+});
+movieDropZone.addEventListener('drop', (event) => {
+    if (!event.dataTransfer.files.length) return;
+    movieFiles = Array.from(event.dataTransfer.files);
+    movieLabel.textContent = movieFiles.length === 1
+        ? movieFiles[0].name
+        : `${movieFiles.length} movies selected`;
+    if (!movieTitle.value && movieFiles.length === 1) {
+        movieTitle.value = movieFiles[0].name.replace(/\.[^.]+$/, '');
+    }
+    uploadSubmit.disabled = false;
+});
+
 uploadForm.addEventListener('submit', (event) => {
     event.preventDefault();
     const isDocumentUpload = documentTab.classList.contains('active');
     const isImageUpload = imageTab.classList.contains('active');
+    const isMovieUpload = movieTab.classList.contains('active');
     const isRecordingUpload = recordTab.classList.contains('active');
     const isAudioUpload = isRecordingUpload ||
         (fileTab.classList.contains('active') && droppedFiles.length > 0 &&
@@ -595,7 +652,9 @@ uploadForm.addEventListener('submit', (event) => {
         ? documentFiles
         : isImageUpload
             ? imageFiles
-            : droppedFiles;
+            : isMovieUpload
+                ? movieFiles
+                : droppedFiles;
 
     if (!recordingFile && !files.length) return;
 
@@ -607,10 +666,18 @@ uploadForm.addEventListener('submit', (event) => {
     } else {
         files.forEach((file) => {
             formData.append(
-                isDocumentUpload ? 'documents' : isImageUpload ? 'images' : isAudioUpload ? 'audio' : 'files',
+                isDocumentUpload ? 'documents'
+                    : isImageUpload ? 'images'
+                        : isMovieUpload ? 'movies'
+                            : isAudioUpload ? 'audio'
+                                : 'files',
                 file
             );
         });
+    }
+    if (isMovieUpload) {
+        formData.append('title', movieTitle.value.trim());
+        formData.append('description', movieDescription.value.trim());
     }
 
     const xhr = new XMLHttpRequest();
@@ -618,9 +685,11 @@ uploadForm.addEventListener('submit', (event) => {
         ? '/upload/document'
         : isImageUpload
             ? '/upload/images'
-            : isAudioUpload
-                ? '/upload/audio'
-                : '/upload');
+            : isMovieUpload
+                ? '/upload/movie'
+                : isAudioUpload
+                    ? '/upload/audio'
+                    : '/upload');
     xhr.setRequestHeader('Authorization', `Bearer ${authToken}`);
 
     uploadSubmit.disabled = true;
@@ -642,7 +711,8 @@ uploadForm.addEventListener('submit', (event) => {
         }
 
         if (xhr.status >= 200 && xhr.status < 300) {
-            const uploads = result.documents || result.images || result.files || (result.file ? [result.file] : []);
+            const uploads = result.documents || result.images || result.movies || result.files ||
+                (result.file ? [result.file] : []);
             const existingNames = new Set(uploads.map((item) => item.filename));
             recentUploads = [...uploads, ...recentUploads.filter((item) => !existingNames.has(item.filename))];
             saveRecentUploads();
@@ -657,8 +727,12 @@ uploadForm.addEventListener('submit', (event) => {
                 droppedFiles = [];
                 documentFiles = [];
                 imageFiles = [];
+                movieFiles = [];
                 documentInput.value = '';
                 imageInput.value = '';
+                movieInput.value = '';
+                movieTitle.value = '';
+                movieDescription.value = '';
                 fileInput.value = '';
                 documentLabel.textContent = 'Choose a document';
                 imageLabel.textContent = 'Choose one or more images';

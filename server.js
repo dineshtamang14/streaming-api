@@ -17,14 +17,18 @@ const port = process.env.PORT || 3000;
 db.on('error', console.error.bind(console, 'MongoDB connection error:'));
 
 app.use(express.json());
-app.use(express.static(uploadsDirectory));
-app.use('/frontend', express.static(frontendDirectory));
 
 app.get('/', (req, res) => {
     res.sendFile(path.join(frontendDirectory, 'index.html'));
 });
 
+app.get('/watch/:filename', (req, res) => {
+    res.sendFile(path.join(frontendDirectory, 'watch.html'));
+});
+
 app.use('/', routes);
+app.use('/frontend', express.static(frontendDirectory));
+app.use(express.static(uploadsDirectory));
 
 if (require.main === module) {
     connectDatabase().catch((error) => {

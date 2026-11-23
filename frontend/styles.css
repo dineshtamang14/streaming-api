@@ -235,7 +235,7 @@ main { min-width: 0; }
 .drop-zone.dragging { border-color: var(--accent); background: rgba(139,92,246,.12); }
 .upload-icon { display: grid; width: 48px; height: 48px; margin-bottom: 12px; place-items: center; border-radius: 50%; background: var(--accent); font-size: 22px; }
 .drop-zone small { margin-top: 6px; color: var(--muted); }
-.upload-tabs { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-top: 20px; padding: 4px; border-radius: 10px; background: var(--surface); }
+.upload-tabs { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; margin-top: 20px; padding: 4px; border-radius: 10px; background: var(--surface); overflow-x: auto; }
 .upload-tab { min-height: 38px; border: 0; border-radius: 8px; color: var(--muted); background: transparent; font-weight: 700; }
 .upload-tab.active { color: var(--text); background: var(--surface-2); }
 .record-panel { margin: 16px 0; padding: 18px; border: 1px solid var(--border); border-radius: 14px; background: var(--surface); }
@@ -251,6 +251,9 @@ main { min-width: 0; }
 .auth-fields label { display: grid; gap: 7px; color: var(--muted); font-size: 13px; font-weight: 700; }
 .auth-fields input { width: 100%; height: 44px; border: 1px solid var(--border); border-radius: 9px; padding: 0 12px; color: var(--text); background: var(--surface); }
 .auth-switch { width: 100%; margin-top: 12px; }
+.movie-details { display: grid; gap: 10px; margin: -6px 0 16px; }
+.movie-details label { display: grid; gap: 6px; color: var(--muted); font-size: 13px; font-weight: 700; }
+.movie-details input, .movie-details textarea { width: 100%; border: 1px solid var(--border); border-radius: 9px; padding: 10px 12px; color: var(--text); background: var(--surface); resize: vertical; }
 @keyframes pulse { 50% { opacity: .55; } }
 .full-button { width: 100%; }
 .full-button:disabled { cursor: not-allowed; opacity: .45; }

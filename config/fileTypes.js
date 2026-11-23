@@ -3,6 +3,10 @@ const mediaExtensions = new Set([
     '.opus', '.weba', '.mp4', '.webm', '.mov', '.avi', '.mkv'
 ]);
 
+const movieExtensions = new Set([
+    '.mp4', '.webm', '.mov', '.avi', '.mkv', '.m4v'
+]);
+
 const audioExtensions = new Set([
     '.mp3', '.m4a', '.wav', '.ogg', '.aac', '.flac', '.opus', '.weba', '.webm'
 ]);
@@ -38,6 +42,8 @@ const mediaContentTypes = {
     '.mov': 'video/quicktime',
     '.avi': 'video/x-msvideo',
     '.mkv': 'video/x-matroska'
+    ,
+    '.m4v': 'video/x-m4v'
 };
 
 const imageContentTypes = {
@@ -52,6 +58,7 @@ const imageContentTypes = {
 
 module.exports = {
     mediaExtensions,
+    movieExtensions,
     audioExtensions,
     imageExtensions,
     documentTypes,

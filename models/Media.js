@@ -6,7 +6,7 @@ const mediaSchema = new mongoose.Schema({
     filename: { type: String, required: true, unique: true, index: true },
     category: {
         type: String,
-        enum: ['audio', 'video', 'image', 'document'],
+        enum: ['audio', 'video', 'movie', 'image', 'document'],
         required: true,
         index: true
     },

@@ -78,11 +78,14 @@ npm.cmd start
 | `GET` | `/search?q=<text>` | Search the MongoDB `videos` collection by title |
 | `POST` | `/upload` | Upload multiple songs or video files |
 | `POST` | `/upload/audio` | Upload multiple audio files or recordings |
+| `POST` | `/upload/movie` | Upload multiple movies |
 | `POST` | `/upload/document` | Upload multiple PDF, Office, text, or CSV documents |
 | `POST` | `/upload/images` | Upload multiple images |
 | `GET` | `/library` | Load persisted media metadata |
 | `GET` | `/library?category=audio` | Load persisted audio items |
 | `GET` | `/audio` | List persisted browser recordings |
+| `GET` | `/movies` | List persisted movies |
+| `GET` | `/watch/:filename` | Open the dedicated movie player |
 | `GET` | `/documents/:filename` | Download or view an uploaded document |
 | `GET` | `/images/:filename` | View an uploaded image |
 | `GET` | `/stream/:filename` | Stream an uploaded file |
@@ -126,6 +129,7 @@ uploads/
   audio/
     recordings/
   video/
+  movies/
   documents/
   images/
 ```
@@ -153,6 +157,7 @@ uploads/
 
 - `models/Media.js` stores the unified media library.
 - `models/AudioRecording.js` stores metadata for browser microphone recordings.
+ - `models/Movie.js` stores movie title, description, URLs, and metadata.
  - `models/User.js` stores hashed user credentials and bearer session tokens.
 
 The `Media` schema includes title, original name, filename, category, MIME type,

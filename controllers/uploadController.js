@@ -1,5 +1,6 @@
 const Media = require('../models/Media');
 const AudioRecording = require('../models/AudioRecording');
+const Movie = require('../models/Movie');
 
 async function persistMedia(req, files, category, isRecording = false) {
     if (Media.db.readyState !== 1) {
@@ -152,4 +153,50 @@ async function uploadImages(req, res) {
     }
 }
 
-module.exports = { uploadMedia, uploadAudio, uploadDocuments, uploadImages };
+async function uploadMovies(req, res) {
+    if (!req.files?.length) {
+        return res.status(400).json({ error: 'One or more movies are required' });
+    }
+
+    try {
+        const movies = await Promise.all(req.files.map(async (file) => {
+            const title = typeof req.body.title === 'string' && req.body.title.trim()
+                ? req.body.title.trim()
+                : file.originalname.replace(/\.[^.]+$/, '');
+            const description = typeof req.body.description === 'string'
+                ? req.body.description.trim()
+                : '';
+            const watchUrl = `/watch/${encodeURIComponent(file.filename)}`;
+            const downloadUrl = `${watchUrl}?download=1`;
+            const movieData = {
+                title,
+                description,
+                originalName: file.originalname,
+                filename: file.filename,
+                mimeType: file.mimetype,
+                size: file.size,
+                watchUrl,
+                downloadUrl,
+                uploaderId: req.user?._id || null
+            };
+
+            if (Movie.db.readyState !== 1) return movieData;
+            return Movie.findOneAndUpdate(
+                { filename: file.filename },
+                movieData,
+                { upsert: true, new: true, runValidators: true }
+            );
+        }));
+
+        return res.status(200).json({
+            message: 'Movies uploaded successfully',
+            movies,
+            files: req.files
+        });
+    } catch (error) {
+        console.error('Movie metadata save failed:', error);
+        return res.status(500).json({ error: 'Movies uploaded but metadata could not be saved' });
+    }
+}
+
+module.exports = { uploadMedia, uploadAudio, uploadMovies, uploadDocuments, uploadImages };

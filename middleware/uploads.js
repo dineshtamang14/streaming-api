@@ -8,13 +8,15 @@ const {
     imagesDirectory,
     audioDirectory,
     videoDirectory,
+    moviesDirectory,
     recordingsDirectory
 } = require('../config/paths');
 const {
     mediaExtensions,
     imageExtensions,
     documentTypes,
-    audioExtensions
+    audioExtensions,
+    movieExtensions
 } = require('../config/fileTypes');
 
 fs.mkdirSync(uploadsDirectory, { recursive: true });
@@ -23,6 +25,7 @@ fs.mkdirSync(imagesDirectory, { recursive: true });
 fs.mkdirSync(audioDirectory, { recursive: true });
 fs.mkdirSync(videoDirectory, { recursive: true });
 fs.mkdirSync(recordingsDirectory, { recursive: true });
+fs.mkdirSync(moviesDirectory, { recursive: true });
 
 function createDiskStorage(directory) {
     return multer.diskStorage({
@@ -76,6 +79,18 @@ const audioUpload = multer({
     }
 });
 
+const movieUpload = multer({
+    storage: createDiskStorage(moviesDirectory),
+    limits: { fileSize: 4 * 1024 * 1024 * 1024, files: 10 },
+    fileFilter: (req, file, cb) => {
+        const extension = path.extname(file.originalname).toLowerCase();
+        if (!movieExtensions.has(extension) || !/^video\//.test(file.mimetype)) {
+            return cb(new multer.MulterError('LIMIT_UNEXPECTED_FILE', 'movies'));
+        }
+        cb(null, true);
+    }
+});
+
 const documentUpload = multer({
     storage: createDiskStorage(documentsDirectory),
     limits: { fileSize: 100 * 1024 * 1024, files: 30 },
@@ -100,4 +115,4 @@ const imageUpload = multer({
     }
 });
 
-module.exports = { mediaUpload, audioUpload, documentUpload, imageUpload };
+module.exports = { mediaUpload, audioUpload, movieUpload, documentUpload, imageUpload };

@@ -3,6 +3,7 @@ const { db } = require('../config/database');
 const { escapeRegex } = require('../utils/regex');
 const Media = require('../models/Media');
 const AudioRecording = require('../models/AudioRecording');
+const Movie = require('../models/Movie');
 
 async function listLibrary(req, res) {
     try {
@@ -31,6 +32,20 @@ async function listRecordings(req, res) {
     }
 }
 
+async function listMovies(req, res) {
+    try {
+        if (Movie.db.readyState !== 1) return res.json([]);
+        const movies = await Movie.find({})
+            .sort({ uploadedAt: -1 })
+            .limit(100)
+            .lean();
+        return res.json(movies);
+    } catch (error) {
+        console.error('Movies query failed:', error);
+        return res.status(500).json({ error: 'Unable to load movies' });
+    }
+}
+
 async function searchVideos(req, res) {
     const query = typeof req.query.q === 'string' ? req.query.q.trim() : '';
     if (!query) {
@@ -48,4 +63,4 @@ async function searchVideos(req, res) {
     }
 }
 
-module.exports = { searchVideos, listLibrary, listRecordings };
+module.exports = { searchVideos, listLibrary, listRecordings, listMovies };

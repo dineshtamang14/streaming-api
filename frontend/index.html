@@ -71,6 +71,7 @@
                     <div class="library-filters" id="library-filters" aria-label="Filter library">
                         <button class="library-filter active" type="button" data-library-filter="all">All</button>
                         <button class="library-filter" type="button" data-library-filter="video">Videos</button>
+                        <button class="library-filter" type="button" data-library-filter="movie">Movies</button>
                         <button class="library-filter" type="button" data-library-filter="audio">Audio</button>
                         <button class="library-filter" type="button" data-library-filter="image">Images</button>
                         <button class="library-filter" type="button" data-library-filter="document">Documents</button>
@@ -102,6 +103,7 @@
                 <button class="upload-tab" id="record-tab" type="button" role="tab" aria-selected="false">Record audio</button>
                 <button class="upload-tab" id="document-tab" type="button" role="tab" aria-selected="false">Document</button>
                 <button class="upload-tab" id="image-tab" type="button" role="tab" aria-selected="false">Images</button>
+                <button class="upload-tab" id="movie-tab" type="button" role="tab" aria-selected="false">Movies</button>
             </div>
             <div id="file-upload-panel" role="tabpanel" aria-labelledby="file-tab">
                 <label class="drop-zone" id="drop-zone" for="file-input">
@@ -140,6 +142,18 @@
                     <strong id="image-label">Choose one or more images</strong>
                     <small>JPG, JPEG, PNG, GIF, WebP, BMP, or SVG</small>
                 </label>
+            </div>
+            <div id="movie-upload-panel" role="tabpanel" aria-labelledby="movie-tab" hidden>
+                <label class="drop-zone" id="movie-drop-zone" for="movie-input">
+                    <input id="movie-input" name="movies" type="file" multiple accept=".mp4,.webm,.mov,.avi,.mkv,.m4v,video/*">
+                    <span class="upload-icon" aria-hidden="true">&#9654;</span>
+                    <strong id="movie-label">Choose one or more movies</strong>
+                    <small>MP4, WebM, MOV, AVI, MKV, or M4V</small>
+                </label>
+                <div class="movie-details">
+                    <label>Title<input id="movie-title" type="text" maxlength="200"></label>
+                    <label>Description<textarea id="movie-description" maxlength="5000" rows="3"></textarea></label>
+                </div>
             </div>
             <div class="upload-progress" id="upload-progress" hidden>
                 <div class="progress-track"><span id="progress-bar"></span></div>

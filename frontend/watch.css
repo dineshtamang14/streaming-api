@@ -1,0 +1,43 @@
+.watch-body { background: #050506; }
+.watch-topbar { display: flex; height: 68px; align-items: center; justify-content: space-between; padding: 0 28px; border-bottom: 1px solid var(--border); }
+.watch-home { color: #bca7ff; text-decoration: none; }
+.watch-layout { width: min(1200px, calc(100% - 32px)); margin: 24px auto 60px; }
+.cinema-player { position: relative; overflow: hidden; width: 100%; aspect-ratio: 16 / 9; border-radius: 14px; background: #000; box-shadow: 0 24px 80px rgba(0,0,0,.45); }
+.cinema-player video { width: 100%; height: 100%; object-fit: contain; }
+.cinema-player.theater { width: calc(100vw - 32px); margin-left: 50%; transform: translateX(-50%); }
+.center-play { position: absolute; z-index: 3; top: 50%; left: 50%; width: 68px; height: 68px; transform: translate(-50%, -50%); border: 1px solid rgba(255,255,255,.35); border-radius: 50%; color: white; background: rgba(0,0,0,.58); font-size: 24px; backdrop-filter: blur(8px); }
+.center-play.hidden { display: none; }
+.player-controls { position: absolute; z-index: 4; right: 0; bottom: 0; left: 0; padding: 42px 12px 10px; opacity: 0; background: linear-gradient(transparent, rgba(0,0,0,.88)); transition: opacity .2s; }
+.cinema-player:hover .player-controls, .cinema-player.controls-visible .player-controls { opacity: 1; }
+.progress-area { height: 16px; cursor: pointer; }
+.progress-track { position: relative; height: 4px; margin-top: 6px; overflow: hidden; border-radius: 999px; background: rgba(255,255,255,.28); }
+.progress-track span { position: absolute; height: 100%; border-radius: 999px; }
+#progress-buffer { width: 0; background: rgba(255,255,255,.42); }
+#progress-played { width: 0; background: #a78bfa; }
+.control-row { display: flex; min-height: 38px; align-items: center; gap: 7px; }
+.control-button, .speed-select { height: 34px; border: 0; border-radius: 7px; color: white; background: transparent; }
+.control-button { min-width: 34px; padding: 0 8px; }
+.control-button:hover, .speed-select:hover { background: rgba(255,255,255,.12); }
+.speed-select { padding: 0 8px; }
+.speed-select option { color: black; }
+.volume-control { display: flex; align-items: center; gap: 4px; }
+.volume-control input { width: 78px; accent-color: #a78bfa; }
+.time-readout { font-size: 12px; font-variant-numeric: tabular-nums; }
+.control-spacer { flex: 1; }
+.watch-details { padding: 22px 4px; }
+.watch-details h1 { margin: 4px 0 10px; font-size: clamp(28px, 4vw, 44px); }
+.watch-details p:not(.eyebrow) { max-width: 760px; color: #b4b4bc; line-height: 1.6; }
+.watch-actions { display: flex; gap: 10px; margin-top: 16px; }
+.secondary-button { min-height: 44px; border: 1px solid var(--border); border-radius: 10px; padding: 0 16px; color: var(--text); background: var(--surface); font-weight: 800; }
+
+@media (max-width: 680px) {
+    .watch-topbar { height: 58px; padding: 0 14px; }
+    .watch-layout { width: 100%; margin: 0 auto 40px; }
+    .cinema-player { border-radius: 0; }
+    .volume-control input { display: none; }
+    .rewind, #rewind, #forward { display: none; }
+    .time-readout { font-size: 11px; }
+    .control-row { gap: 2px; }
+    .watch-details { padding: 18px 14px; }
+    .watch-actions { flex-direction: column; }
+}

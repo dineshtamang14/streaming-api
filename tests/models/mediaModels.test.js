@@ -1,10 +1,11 @@
 const Media = require('../../models/Media');
 const AudioRecording = require('../../models/AudioRecording');
+const Movie = require('../../models/Movie');
 
 describe('MongoDB media schemas', () => {
   it('defines the media category enum', () => {
     const category = Media.schema.path('category');
-    expect(category.enumValues).toEqual(['audio', 'video', 'image', 'document']);
+    expect(category.enumValues).toEqual(['audio', 'video', 'movie', 'image', 'document']);
   });
 
   it('requires an AudioRecording media reference', () => {
@@ -25,5 +26,14 @@ describe('MongoDB media schemas', () => {
     });
 
     expect(media.isRecording).toBe(false);
+  });
+
+  it('requires title and stream URLs for a Movie', () => {
+    const title = Movie.schema.path('title');
+    const watchUrl = Movie.schema.path('watchUrl');
+    const downloadUrl = Movie.schema.path('downloadUrl');
+    expect(title.isRequired).toBe(true);
+    expect(watchUrl.isRequired).toBe(true);
+    expect(downloadUrl.isRequired).toBe(true);
   });
 });

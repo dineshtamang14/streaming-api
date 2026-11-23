@@ -60,6 +60,47 @@ Protected endpoints:
 - `POST /upload/document`
 - `POST /upload/images`
 
+## Movie upload and playback
+
+### Upload movies
+
+```http
+POST /upload/movie
+Authorization: Bearer <token>
+Content-Type: multipart/form-data
+```
+
+Send one or more files in the `movies` field. Optional multipart fields are
+`title` and `description`. Supported formats are MP4, WebM, MOV, AVI, MKV, and
+M4V. The limit is 4 GB per movie and 10 movies per request.
+
+```bash
+curl -X POST \
+  -H "Authorization: Bearer <token>" \
+  -F "title=Example Movie" \
+  -F "description=A sample movie" \
+  -F "movies=@./movie.mp4" \
+  http://localhost:3000/upload/movie
+```
+
+### List movies
+
+```http
+GET /movies
+```
+
+### Watch a movie
+
+```http
+GET /watch/:filename
+GET /movie/file/:filename
+GET /movie/file/:filename?download=1
+```
+
+The watch page provides native range streaming, playback speed, 10-second seek,
+volume controls, theater mode, fullscreen, picture-in-picture, keyboard
+shortcuts, and download.
+
 ## Prerequisites
 
 Start MongoDB locally with the database URL:
