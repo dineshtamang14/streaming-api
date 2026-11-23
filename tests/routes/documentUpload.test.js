@@ -40,7 +40,7 @@ describe('document uploads', () => {
       });
 
     expect(upload.status).toBe(400);
-    expect(upload.body.error).toMatch(/documents? are allowed/i);
+    expect(upload.body.error).toMatch(/supported document files are allowed/i);
   });
 
   it('returns 404 for a missing document', async () => {

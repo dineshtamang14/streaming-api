@@ -74,11 +74,47 @@ npm.cmd test -- --runInBand
 ```text
 server.js                 Express application and streaming endpoints
 controllers/              Controller implementations
-middleware/               Request middleware
-routes/                   Express routers
+middleware/               Multer and upload error middleware
+routes/                   Express route definitions
+config/                   Paths, MongoDB, and file-type configuration
+utils/                    Range and regular-expression helpers
+frontend/                 Responsive browser interface
 tests/                    Jest and SuperTest tests
 API_DOCUMENTATION.md      Detailed endpoint reference
 ```
+
+## Code Organization
+
+### Application entry
+
+- `server.js` creates the Express app, applies shared middleware, mounts routes,
+  serves the frontend, connects to MongoDB, and starts the server.
+
+### Configuration
+
+- `config/paths.js` centralizes upload and frontend directories.
+- `config/database.js` owns the MongoDB URI and connection lifecycle.
+- `config/fileTypes.js` defines supported extensions and MIME types.
+
+### Routing
+
+- `routes/index.js` mounts the application router.
+- `routes/api.js` maps public HTTP endpoints to middleware and controllers.
+
+### Controllers
+
+- `controllers/searchController.js` searches MongoDB video titles.
+- `controllers/mediaController.js` handles range-based media streaming.
+- `controllers/uploadController.js` validates upload results and responses.
+- `controllers/documentController.js` serves or downloads documents.
+- `controllers/imageController.js` serves images.
+
+### Middleware and utilities
+
+- `middleware/uploads.js` defines media, document, and image Multer storage.
+- `middleware/uploadErrors.js` standardizes Multer error responses.
+- `utils/streamRange.js` parses HTTP byte ranges.
+- `utils/regex.js` escapes search input for MongoDB regular expressions.
 
 ## License
 
