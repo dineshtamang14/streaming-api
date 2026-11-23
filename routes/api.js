@@ -24,8 +24,14 @@ const {
     imageUpload
 } = require('../middleware/uploads');
 const { multerErrorHandler } = require('../middleware/uploadErrors');
+const requireAuth = require('../middleware/authMiddleware');
+const { signup, signin } = require('../controllers/authController');
+const { getCurrentUser } = require('../controllers/authProfileController');
 
 router.get('/example', exampleController.exampleMethod);
+router.post('/auth/signup', signup);
+router.post('/auth/signin', signin);
+router.get('/auth/me', requireAuth, getCurrentUser);
 router.get('/search', searchVideos);
 router.get('/library', listLibrary);
 router.get('/audio', listRecordings);
@@ -36,6 +42,7 @@ router.get('/images/:filename', serveImage);
 
 router.post(
     '/upload',
+    requireAuth,
     mediaUpload.array('files', 20),
     multerErrorHandler('Only audio and video media files are allowed'),
     uploadMedia
@@ -43,6 +50,7 @@ router.post(
 
 router.post(
     '/upload/audio',
+    requireAuth,
     audioUpload.array('audio', 30),
     multerErrorHandler('Only supported audio files are allowed'),
     uploadAudio
@@ -50,6 +58,7 @@ router.post(
 
 router.post(
     '/upload/document',
+    requireAuth,
     documentUpload.array('documents', 30),
     multerErrorHandler('Only supported document files are allowed'),
     uploadDocuments
@@ -57,6 +66,7 @@ router.post(
 
 router.post(
     '/upload/images',
+    requireAuth,
     imageUpload.array('images', 30),
     multerErrorHandler('Only supported image files are allowed'),
     uploadImages

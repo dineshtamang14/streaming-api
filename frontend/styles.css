@@ -130,6 +130,7 @@ main { min-width: 0; }
 }
 
 .upload-button { height: 44px; padding: 0 16px; }
+.auth-button { height: 44px; border: 1px solid var(--border); border-radius: 10px; padding: 0 14px; color: var(--text); background: var(--surface); font-weight: 800; }
 .upload-button span:first-child { margin-right: 6px; font-size: 20px; }
 .content { width: min(1180px, calc(100% - 76px)); margin: 0 auto; padding: 34px 0 60px; }
 
@@ -246,6 +247,10 @@ main { min-width: 0; }
 .record-actions { display: grid; grid-template-columns: 1fr auto; gap: 8px; margin-top: 16px; }
 .secondary-button { min-height: 44px; border: 1px solid var(--border); border-radius: 10px; color: var(--text); background: var(--surface-2); font-weight: 800; }
 .record-actions button:disabled { cursor: not-allowed; opacity: .45; }
+.auth-fields { display: grid; gap: 12px; margin: 20px 0 8px; }
+.auth-fields label { display: grid; gap: 7px; color: var(--muted); font-size: 13px; font-weight: 700; }
+.auth-fields input { width: 100%; height: 44px; border: 1px solid var(--border); border-radius: 9px; padding: 0 12px; color: var(--text); background: var(--surface); }
+.auth-switch { width: 100%; margin-top: 12px; }
 @keyframes pulse { 50% { opacity: .55; } }
 .full-button { width: 100%; }
 .full-button:disabled { cursor: not-allowed; opacity: .45; }

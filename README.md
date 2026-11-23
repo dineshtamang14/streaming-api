@@ -39,6 +39,27 @@ PORT=3000
 The included `.env.example` shows the required format. Never commit `.env`;
 it is ignored by Git.
 
+## Authentication
+
+The API uses a simple bearer-token authentication system backed by MongoDB.
+Passwords are stored using PBKDF2 with SHA-512 and random salts. Tokens are
+random 32-byte values stored only as SHA-256 hashes and expire after 7 days.
+
+| Method | Endpoint | Description |
+| --- | --- | --- |
+| `POST` | `/auth/signup` | Create a user and return a bearer token |
+| `POST` | `/auth/signin` | Sign in and return a bearer token |
+| `GET` | `/auth/me` | Return the authenticated user |
+
+Send protected requests with:
+
+```http
+Authorization: Bearer <token>
+```
+
+Protected operations include all upload endpoints. Browsing, streaming,
+downloading, search, and library viewing remain public.
+
 ```bash
 npm start
 ```
@@ -98,6 +119,23 @@ tests/                    Jest and SuperTest tests
 API_DOCUMENTATION.md      Detailed endpoint reference
 ```
 
+## Upload Folder Structure
+
+```text
+uploads/
+  audio/
+    recordings/
+  video/
+  documents/
+  images/
+```
+
+- Audio files without recording metadata go to `uploads/audio/`.
+- Browser microphone recordings go to `uploads/audio/recordings/`.
+- Video files go to `uploads/video/`.
+- PDF and Office files go to `uploads/documents/`.
+- Images go to `uploads/images/`.
+
 ## Code Organization
 
 ### Application entry
@@ -115,6 +153,7 @@ API_DOCUMENTATION.md      Detailed endpoint reference
 
 - `models/Media.js` stores the unified media library.
 - `models/AudioRecording.js` stores metadata for browser microphone recordings.
+ - `models/User.js` stores hashed user credentials and bearer session tokens.
 
 The `Media` schema includes title, original name, filename, category, MIME type,
 size, optional duration, recording flag, stream/download URLs, and upload time.

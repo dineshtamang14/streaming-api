@@ -14,6 +14,52 @@ http://localhost:3000
 
 The port can be changed with the `PORT` environment variable.
 
+## Authentication
+
+### Sign up
+
+```http
+POST /auth/signup
+Content-Type: application/json
+```
+
+```json
+{
+  "name": "Dinesh Tamang",
+  "email": "dinesh@example.com",
+  "password": "strong-password"
+}
+```
+
+The response contains a bearer token valid for seven days.
+
+### Sign in
+
+```http
+POST /auth/signin
+Content-Type: application/json
+```
+
+```json
+{
+  "email": "dinesh@example.com",
+  "password": "strong-password"
+}
+```
+
+Use the returned token for protected upload requests:
+
+```http
+Authorization: Bearer <token>
+```
+
+Protected endpoints:
+
+- `POST /upload`
+- `POST /upload/audio`
+- `POST /upload/document`
+- `POST /upload/images`
+
 ## Prerequisites
 
 Start MongoDB locally with the database URL:

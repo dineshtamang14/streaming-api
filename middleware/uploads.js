@@ -6,7 +6,9 @@ const {
     uploadsDirectory,
     documentsDirectory,
     imagesDirectory,
-    audioDirectory
+    audioDirectory,
+    videoDirectory,
+    recordingsDirectory
 } = require('../config/paths');
 const {
     mediaExtensions,
@@ -19,6 +21,8 @@ fs.mkdirSync(uploadsDirectory, { recursive: true });
 fs.mkdirSync(documentsDirectory, { recursive: true });
 fs.mkdirSync(imagesDirectory, { recursive: true });
 fs.mkdirSync(audioDirectory, { recursive: true });
+fs.mkdirSync(videoDirectory, { recursive: true });
+fs.mkdirSync(recordingsDirectory, { recursive: true });
 
 function createDiskStorage(directory) {
     return multer.diskStorage({
@@ -30,7 +34,16 @@ function createDiskStorage(directory) {
 }
 
 const mediaUpload = multer({
-    storage: createDiskStorage(uploadsDirectory),
+    storage: multer.diskStorage({
+        destination: (req, file, cb) => {
+            const extension = path.extname(file.originalname).toLowerCase();
+            const directory = audioExtensions.has(extension) ? audioDirectory : videoDirectory;
+            cb(null, directory);
+        },
+        filename: (req, file, cb) => {
+            cb(null, `${Date.now()}-${path.basename(file.originalname)}`);
+        }
+    }),
     limits: { fileSize: 500 * 1024 * 1024, files: 20 },
     fileFilter: (req, file, cb) => {
         const extension = path.extname(file.originalname).toLowerCase();
@@ -42,7 +55,17 @@ const mediaUpload = multer({
 });
 
 const audioUpload = multer({
-    storage: createDiskStorage(audioDirectory),
+    storage: multer.diskStorage({
+        destination: (req, file, cb) => {
+            const directory = req.body.isRecording === 'true'
+                ? recordingsDirectory
+                : audioDirectory;
+            cb(null, directory);
+        },
+        filename: (req, file, cb) => {
+            cb(null, `${Date.now()}-${path.basename(file.originalname)}`);
+        }
+    }),
     limits: { fileSize: 250 * 1024 * 1024, files: 30 },
     fileFilter: (req, file, cb) => {
         const extension = path.extname(file.originalname).toLowerCase();

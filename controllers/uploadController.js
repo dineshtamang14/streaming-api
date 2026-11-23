@@ -22,7 +22,7 @@ async function persistMedia(req, files, category, isRecording = false) {
     return Promise.all(files.map(async (file) => {
         const title = file.originalname.replace(/\.[^.]+$/, '') || file.filename;
         const url = category === 'audio'
-            ? `/audio/file/${encodeURIComponent(file.filename)}`
+            ? `/stream/${encodeURIComponent(file.filename)}`
             : category === 'image'
                 ? `/images/${encodeURIComponent(file.filename)}`
                 : `/documents/${encodeURIComponent(file.filename)}`;

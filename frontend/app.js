@@ -33,6 +33,17 @@ let recordingChunks = [];
 let recordingStream = null;
 let recordingStartedAt = 0;
 let recordingTimer = null;
+let authMode = 'signin';
+let authToken = localStorage.getItem('streamflix-auth-token') || '';
+let authUser = loadAuthUser();
+
+function loadAuthUser() {
+    try {
+        return JSON.parse(localStorage.getItem('streamflix-auth-user') || 'null');
+    } catch {
+        return null;
+    }
+}
 
 function loadRecentUploads() {
     try {
@@ -260,6 +271,10 @@ document.querySelectorAll('[data-view]').forEach((button) => {
 });
 
 function openUpload() {
+    if (!authToken) {
+        openAuth('signin');
+        return;
+    }
     uploadDialog.showModal();
 }
 
@@ -278,6 +293,85 @@ document.querySelector('#close-player').addEventListener('click', () => {
     audioPlayer.pause();
     playerDialog.close();
 });
+
+const authDialog = document.querySelector('#auth-dialog');
+const authForm = document.querySelector('#auth-form');
+const authTitle = document.querySelector('#auth-title');
+const authKicker = document.querySelector('#auth-kicker');
+const authStatus = document.querySelector('#auth-status');
+const authSubmit = document.querySelector('#auth-submit');
+const authSwitch = document.querySelector('#auth-switch');
+const nameField = document.querySelector('#name-field');
+const authName = document.querySelector('#auth-name');
+const authEmail = document.querySelector('#auth-email');
+const authPassword = document.querySelector('#auth-password');
+const openAuthButton = document.querySelector('#open-auth');
+
+function openAuth(mode = 'signin') {
+    authMode = mode;
+    const signingUp = mode === 'signup';
+    authTitle.textContent = signingUp ? 'Create account' : 'Sign in';
+    authKicker.textContent = signingUp ? 'Join StreamFlix' : 'Welcome back';
+    authSubmit.textContent = signingUp ? 'Create account' : 'Sign in';
+    authSwitch.textContent = signingUp ? 'Already have an account?' : 'Create an account';
+    nameField.hidden = !signingUp;
+    authName.required = signingUp;
+    authPassword.autocomplete = signingUp ? 'new-password' : 'current-password';
+    authStatus.textContent = '';
+    authDialog.showModal();
+}
+
+openAuthButton.addEventListener('click', () => {
+    if (authToken && authUser) {
+        localStorage.removeItem('streamflix-auth-token');
+        localStorage.removeItem('streamflix-auth-user');
+        authToken = '';
+        authUser = null;
+        openAuthButton.textContent = 'Sign in';
+        status.textContent = 'Signed out';
+        return;
+    }
+    openAuth();
+});
+document.querySelector('#close-auth').addEventListener('click', () => authDialog.close());
+authSwitch.addEventListener('click', () => openAuth(authMode === 'signin' ? 'signup' : 'signin'));
+
+authForm.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const payload = {
+        email: authEmail.value.trim(),
+        password: authPassword.value
+    };
+    if (authMode === 'signup') payload.name = authName.value.trim();
+
+    authSubmit.disabled = true;
+    authStatus.textContent = authMode === 'signin' ? 'Signing in...' : 'Creating account...';
+
+    try {
+        const response = await fetch(authMode === 'signin' ? '/auth/signin' : '/auth/signup', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.error || 'Authentication failed');
+
+        authToken = result.token;
+        authUser = result.user;
+        localStorage.setItem('streamflix-auth-token', authToken);
+        localStorage.setItem('streamflix-auth-user', JSON.stringify(authUser));
+        openAuthButton.textContent = authUser.name;
+        authDialog.close();
+        authForm.reset();
+        status.textContent = `Welcome, ${authUser.name}`;
+    } catch (error) {
+        authStatus.textContent = error.message;
+    } finally {
+        authSubmit.disabled = false;
+    }
+});
+
+if (authUser) openAuthButton.textContent = authUser.name;
 
 const fileTab = document.querySelector('#file-tab');
 const recordTab = document.querySelector('#record-tab');
@@ -527,6 +621,7 @@ uploadForm.addEventListener('submit', (event) => {
             : isAudioUpload
                 ? '/upload/audio'
                 : '/upload');
+    xhr.setRequestHeader('Authorization', `Bearer ${authToken}`);
 
     uploadSubmit.disabled = true;
     uploadProgress.hidden = false;

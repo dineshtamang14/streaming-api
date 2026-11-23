@@ -1,7 +1,12 @@
 // Media file access, range validation, and audio/video streaming responses.
 const fs = require('fs');
 const path = require('path');
-const { uploadsDirectory } = require('../config/paths');
+const {
+    uploadsDirectory,
+    videoDirectory,
+    audioDirectory,
+    recordingsDirectory
+} = require('../config/paths');
 const { mediaContentTypes } = require('../config/fileTypes');
 const { parseRangeHeader } = require('../utils/streamRange');
 
@@ -11,7 +16,22 @@ async function streamMedia(req, res) {
         return res.status(400).json({ error: 'Invalid file name' });
     }
 
-    const filePath = path.join(uploadsDirectory, fileName);
+    const candidates = [
+        path.join(videoDirectory, fileName),
+        path.join(audioDirectory, fileName),
+        path.join(recordingsDirectory, fileName),
+        path.join(uploadsDirectory, fileName)
+    ];
+    let filePath = null;
+    for (const candidate of candidates) {
+        if (fs.existsSync(candidate)) {
+            filePath = candidate;
+            break;
+        }
+    }
+    if (!filePath) {
+        return res.status(404).json({ error: 'File not found' });
+    }
     let stat;
 
     try {

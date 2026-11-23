@@ -1,6 +1,9 @@
 const fs = require('fs');
 const path = require('path');
 const request = require('supertest');
+
+jest.mock('../../middleware/authMiddleware', () => (req, res, next) => next());
+
 const app = require('../../server');
 
 describe('document uploads', () => {
@@ -34,7 +37,7 @@ describe('document uploads', () => {
   it('rejects unsupported document extensions', async () => {
     const upload = await request(app)
       .post('/upload/document')
-      .attach('document', Buffer.from('not executable'), {
+      .attach('documents', Buffer.from('not executable'), {
         filename: 'script.exe',
         contentType: 'application/octet-stream'
       });

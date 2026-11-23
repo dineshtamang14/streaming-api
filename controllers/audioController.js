@@ -1,6 +1,9 @@
 const fs = require('fs');
 const path = require('path');
-const { audioDirectory } = require('../config/paths');
+const {
+    audioDirectory,
+    recordingsDirectory
+} = require('../config/paths');
 const { mediaContentTypes } = require('../config/fileTypes');
 const { parseRangeHeader } = require('../utils/streamRange');
 
@@ -10,7 +13,9 @@ async function streamAudio(req, res) {
         return res.status(400).json({ error: 'Invalid audio name' });
     }
 
-    const filePath = path.join(audioDirectory, fileName);
+    const filePath = fs.existsSync(path.join(recordingsDirectory, fileName))
+        ? path.join(recordingsDirectory, fileName)
+        : path.join(audioDirectory, fileName);
     let stat;
     try {
         stat = await fs.promises.stat(filePath);
