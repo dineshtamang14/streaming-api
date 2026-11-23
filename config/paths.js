@@ -4,6 +4,7 @@ const rootDirectory = path.join(__dirname, '..');
 const uploadsDirectory = path.join(rootDirectory, 'uploads');
 const documentsDirectory = path.join(uploadsDirectory, 'documents');
 const imagesDirectory = path.join(uploadsDirectory, 'images');
+const audioDirectory = path.join(uploadsDirectory, 'audio');
 const frontendDirectory = path.join(rootDirectory, 'frontend');
 
 module.exports = {
@@ -11,5 +12,6 @@ module.exports = {
     uploadsDirectory,
     documentsDirectory,
     imagesDirectory,
+    audioDirectory,
     frontendDirectory
 };

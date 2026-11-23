@@ -56,8 +56,12 @@ npm.cmd start
 | --- | --- | --- |
 | `GET` | `/search?q=<text>` | Search the MongoDB `videos` collection by title |
 | `POST` | `/upload` | Upload multiple songs or video files |
+| `POST` | `/upload/audio` | Upload multiple audio files or recordings |
 | `POST` | `/upload/document` | Upload multiple PDF, Office, text, or CSV documents |
 | `POST` | `/upload/images` | Upload multiple images |
+| `GET` | `/library` | Load persisted media metadata |
+| `GET` | `/library?category=audio` | Load persisted audio items |
+| `GET` | `/audio` | List persisted browser recordings |
 | `GET` | `/documents/:filename` | Download or view an uploaded document |
 | `GET` | `/images/:filename` | View an uploaded image |
 | `GET` | `/stream/:filename` | Stream an uploaded file |
@@ -106,6 +110,14 @@ API_DOCUMENTATION.md      Detailed endpoint reference
 - `config/paths.js` centralizes upload and frontend directories.
 - `config/database.js` owns the MongoDB URI and connection lifecycle.
 - `config/fileTypes.js` defines supported extensions and MIME types.
+
+### MongoDB models
+
+- `models/Media.js` stores the unified media library.
+- `models/AudioRecording.js` stores metadata for browser microphone recordings.
+
+The `Media` schema includes title, original name, filename, category, MIME type,
+size, optional duration, recording flag, stream/download URLs, and upload time.
 
 ### Routing
 

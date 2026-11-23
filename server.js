@@ -31,8 +31,18 @@ if (require.main === module) {
         console.error('MongoDB connection failed:', error);
     });
 
-    app.listen(port, () => {
+    const server = app.listen(port, () => {
         console.log(`Server running on port ${port}`);
+    });
+
+    server.on('error', (error) => {
+        if (error.code === 'EADDRINUSE') {
+            console.error(`Port ${port} is already in use.`);
+            process.exitCode = 1;
+            return;
+        }
+        console.error('Server startup failed:', error);
+        process.exitCode = 1;
     });
 }
 

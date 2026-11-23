@@ -119,6 +119,45 @@ Responses:
 - `404 Not Found` for a missing document
 - `413 Payload Too Large` for a document over 100 MB
 
+### Get the persisted media library
+
+```http
+GET /library
+GET /library?category=audio
+```
+
+Returns MongoDB `Media` records sorted newest first. Valid categories are
+`audio`, `video`, `image`, and `document`.
+
+### Upload audio files
+
+```http
+POST /upload/audio
+Content-Type: multipart/form-data
+```
+
+Send one or more files in the `audio` multipart field. Supported formats include
+MP3, M4A, WAV, OGG, AAC, FLAC, OPUS, WEBA, and WebM. Audio uploads are limited
+to 250 MB per file.
+
+For microphone recordings, add multipart fields `isRecording=true` and
+`title=<recording name>`.
+
+### Stream or download audio
+
+```http
+GET /audio/file/:filename
+GET /audio/file/:filename?download=1
+```
+
+### List browser recordings
+
+```http
+GET /audio
+```
+
+Returns records from the MongoDB `audio_recordings` collection.
+
 Example:
 
 ```bash

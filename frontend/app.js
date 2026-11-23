@@ -92,6 +92,7 @@ function renderMedia(items) {
         if (item.filename) {
             if (category === 'document') streamUrl = `/documents/${encodeURIComponent(item.filename)}`;
             else if (category === 'image') streamUrl = `/images/${encodeURIComponent(item.filename)}`;
+            else if (category === 'audio') streamUrl = `/audio/file/${encodeURIComponent(item.filename)}`;
             else streamUrl = `/stream/${encodeURIComponent(item.filename)}`;
         }
         const card = document.createElement('article');
@@ -106,6 +107,15 @@ function renderMedia(items) {
         const body = document.createElement('div');
         body.className = 'card-body';
         body.innerHTML = `<strong title="${escapeHtml(name)}">${escapeHtml(name)}</strong><small>${category[0].toUpperCase() + category.slice(1)}</small>`;
+
+        if (streamUrl) {
+            const download = document.createElement('a');
+            download.className = 'card-download';
+            download.href = `${streamUrl}${streamUrl.includes('?') ? '&' : '?'}download=1`;
+            download.download = name;
+            download.textContent = 'Download';
+            body.append(download);
+        }
 
         if (category === 'image' && streamUrl) {
             preview.style.background = `center / cover no-repeat url("${streamUrl}")`;
@@ -176,10 +186,22 @@ function openImage(name, url) {
     playerDialog.showModal();
 }
 
-function showRecentUploads() {
+async function showRecentUploads() {
     sectionKicker.textContent = 'Library';
     sectionTitle.textContent = 'Recently uploaded';
     clearSearch.hidden = true;
+    try {
+        const response = await fetch('/library');
+        if (response.ok) {
+            const persistedItems = await response.json();
+            if (persistedItems.length) {
+                recentUploads = persistedItems;
+                saveRecentUploads();
+            }
+        }
+    } catch (error) {
+        console.warn('Could not load persisted library:', error);
+    }
     renderMedia(recentUploads);
 }
 
@@ -471,6 +493,10 @@ uploadForm.addEventListener('submit', (event) => {
     event.preventDefault();
     const isDocumentUpload = documentTab.classList.contains('active');
     const isImageUpload = imageTab.classList.contains('active');
+    const isRecordingUpload = recordTab.classList.contains('active');
+    const isAudioUpload = isRecordingUpload ||
+        (fileTab.classList.contains('active') && droppedFiles.length > 0 &&
+            droppedFiles.every((file) => /\.(mp3|m4a|wav|ogg|aac|flac|opus|weba|webm)$/i.test(file.name)));
     const files = isDocumentUpload
         ? documentFiles
         : isImageUpload
@@ -481,10 +507,15 @@ uploadForm.addEventListener('submit', (event) => {
 
     const formData = new FormData();
     if (recordingFile) {
-        formData.append('files', recordingFile);
+        formData.append('audio', recordingFile);
+        formData.append('isRecording', 'true');
+        formData.append('title', recordingFile.name.replace(/\.[^.]+$/, ''));
     } else {
         files.forEach((file) => {
-            formData.append(isDocumentUpload ? 'documents' : isImageUpload ? 'images' : 'files', file);
+            formData.append(
+                isDocumentUpload ? 'documents' : isImageUpload ? 'images' : isAudioUpload ? 'audio' : 'files',
+                file
+            );
         });
     }
 
@@ -493,7 +524,9 @@ uploadForm.addEventListener('submit', (event) => {
         ? '/upload/document'
         : isImageUpload
             ? '/upload/images'
-            : '/upload');
+            : isAudioUpload
+                ? '/upload/audio'
+                : '/upload');
 
     uploadSubmit.disabled = true;
     uploadProgress.hidden = false;

@@ -5,17 +5,20 @@ const fs = require('fs');
 const {
     uploadsDirectory,
     documentsDirectory,
-    imagesDirectory
+    imagesDirectory,
+    audioDirectory
 } = require('../config/paths');
 const {
     mediaExtensions,
     imageExtensions,
-    documentTypes
+    documentTypes,
+    audioExtensions
 } = require('../config/fileTypes');
 
 fs.mkdirSync(uploadsDirectory, { recursive: true });
 fs.mkdirSync(documentsDirectory, { recursive: true });
 fs.mkdirSync(imagesDirectory, { recursive: true });
+fs.mkdirSync(audioDirectory, { recursive: true });
 
 function createDiskStorage(directory) {
     return multer.diskStorage({
@@ -33,6 +36,18 @@ const mediaUpload = multer({
         const extension = path.extname(file.originalname).toLowerCase();
         if (!mediaExtensions.has(extension) || !/^(audio|video)\//.test(file.mimetype)) {
             return cb(new multer.MulterError('LIMIT_UNEXPECTED_FILE', 'files'));
+        }
+        cb(null, true);
+    }
+});
+
+const audioUpload = multer({
+    storage: createDiskStorage(audioDirectory),
+    limits: { fileSize: 250 * 1024 * 1024, files: 30 },
+    fileFilter: (req, file, cb) => {
+        const extension = path.extname(file.originalname).toLowerCase();
+        if (!audioExtensions.has(extension) || !/^audio\//.test(file.mimetype)) {
+            return cb(new multer.MulterError('LIMIT_UNEXPECTED_FILE', 'audio'));
         }
         cb(null, true);
     }
@@ -62,4 +77,4 @@ const imageUpload = multer({
     }
 });
 
-module.exports = { mediaUpload, documentUpload, imageUpload };
+module.exports = { mediaUpload, audioUpload, documentUpload, imageUpload };
