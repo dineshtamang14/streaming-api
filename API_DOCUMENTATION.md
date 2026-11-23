@@ -1,82 +1,174 @@
-# Comprehensive API Documentation for Streaming API
+# Streaming API Reference
 
-## Overview of the Streaming API
-The Streaming API provides real-time access to streaming data, allowing users to consume and produce data efficiently. This document outlines all available endpoints, request/response formats, and setup instructions for effective usage.
+## Overview
 
-## Routes and Endpoints
+This API uses Express to provide file uploads, file streaming, and title
+search. Uploaded files are stored in the local `uploads/` directory. Search
+results are read from the MongoDB `videos` collection.
 
-### 1. Get Stream Data
-- **Endpoint**: `/api/v1/stream`
-- **Method**: `GET`
-- **Description**: Retrieves current streaming data.
-  
-### 2. Post Stream Data
-- **Endpoint**: `/api/v1/stream`
-- **Method**: `POST`
-- **Description**: Sends new data to the streaming service.
+## Base URL
 
-## Request and Response Examples
+```text
+http://localhost:3000
+```
 
-### Get Stream Data
-- **Request**:
-  ```
-  GET /api/v1/stream HTTP/1.1
-  Host: yourdomain.com
-  ```
-- **Response**:
-  ```json
+The port can be changed with the `PORT` environment variable.
+
+## Prerequisites
+
+Start MongoDB locally with the database URL:
+
+```text
+mongodb://localhost:27017/streamingAPI
+```
+
+The database and `videos` collection may be created by MongoDB when data is
+first inserted. The API expects video documents to contain a `title` field.
+
+## Endpoints
+
+### Search videos
+
+```http
+GET /search?q=<query>
+```
+
+Searches video titles case-insensitively. The query is treated as literal text,
+not as a regular expression.
+
+Example:
+
+```bash
+curl "http://localhost:3000/search?q=matrix"
+```
+
+Successful response (`200 OK`):
+
+```json
+[
   {
-    "status": "success",
-    "data": [
-      {
-        "id": "1",
-        "value": "Some data"
-      }
-    ]
+    "_id": "665000000000000000000001",
+    "title": "The Matrix",
+    "filename": "1715600000000-the-matrix.mp4"
   }
-  ```
+]
+```
 
-### Post Stream Data
-- **Request**:
-  ```
-  POST /api/v1/stream HTTP/1.1
-  Host: yourdomain.com
-  Content-Type: application/json
+Errors:
 
-  {
-    "value": "New stream data"
+- `400 Bad Request` when `q` is missing or empty
+- `500 Internal Server Error` when the database search fails
+
+### Upload a file
+
+```http
+POST /upload
+Content-Type: multipart/form-data
+```
+
+Send the file in a multipart field named `file`.
+
+Example:
+
+```bash
+curl -X POST \
+  -F "file=@./movie.mp4" \
+  http://localhost:3000/upload
+```
+
+Successful response (`200 OK`):
+
+```json
+{
+  "message": "File uploaded successfully",
+  "file": {
+    "fieldname": "file",
+    "originalname": "movie.mp4",
+    "filename": "1715600000000-movie.mp4",
+    "destination": "E:\\path\\to\\streaming-api\\uploads",
+    "path": "E:\\path\\to\\streaming-api\\uploads\\1715600000000-movie.mp4",
+    "size": 1048576
   }
-  ```
-- **Response**:
-  ```json
-  {
-    "status": "success",
-    "message": "Data has been posted"
-  }
-  ```
+}
+```
 
-## Setup Instructions
-1. **Clone the Repository**: 
-   ```bash
-   git clone https://github.com/dineshtamang14/streaming-api.git
-   cd streaming-api
-   ```
+The generated filename should be used with `/stream/:filename`.
 
-2. **Install Dependencies**:
-   ```bash
-   npm install
-   ```
+Errors:
 
-3. **Configure Environment Variables**: Make sure to set up the required environment variables in a `.env` file.
+- `400 Bad Request` when no `file` field is supplied
 
-## Local Environment Usage Guide
-To work with the Streaming API in a local environment:
+### Stream a file
 
-1. **Start the Application**: 
-   ```bash
-   npm start
-   ```
+```http
+GET /stream/:filename
+```
 
-2. **Access the API**: The API will be available at `http://localhost:3000/api/v1/`.
+Streams a file previously saved in `uploads/`. The endpoint supports HTTP byte
+ranges for media seeking.
 
-3. **Testing the API**: You can use tools like Postman or curl to test various endpoints.
+Full-file request:
+
+```bash
+curl http://localhost:3000/stream/1715600000000-movie.mp4 --output movie.mp4
+```
+
+Partial request:
+
+```bash
+curl -H "Range: bytes=0-999999" \
+  http://localhost:3000/stream/1715600000000-movie.mp4 \
+  --output movie-part.mp4
+```
+
+Responses:
+
+- `200 OK` for a complete file
+- `206 Partial Content` for a valid byte range
+- `400 Bad Request` for an invalid filename
+- `404 Not Found` when the file does not exist
+- `416 Range Not Satisfiable` for an invalid byte range
+
+Supported content types include MP4, MP3, M4A, WAV, and WebM. Unknown file
+extensions are served as `application/octet-stream`.
+
+### Serve an uploaded file
+
+```http
+GET /:filename
+```
+
+Uploaded files are also available through Express static-file serving:
+
+```bash
+curl http://localhost:3000/1715600000000-movie.mp4 --output movie.mp4
+```
+
+For media playback and byte-range support, prefer `/stream/:filename`.
+
+## Error Response Format
+
+Endpoint validation and operational errors use JSON:
+
+```json
+{
+  "error": "File not found"
+}
+```
+
+## Development
+
+Install dependencies and run the test suite:
+
+```bash
+npm install
+npm test -- --runInBand
+```
+
+On Windows PowerShell, use `npm.cmd` when script execution policy blocks
+`npm.ps1`:
+
+```powershell
+npm.cmd install
+npm.cmd test -- --runInBand
+```
