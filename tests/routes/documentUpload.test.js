@@ -17,14 +17,14 @@ describe('document uploads', () => {
   it('uploads and serves a supported PDF document', async () => {
     const upload = await request(app)
       .post('/upload/document')
-      .attach('document', Buffer.from('%PDF-1.4 test'), {
+      .attach('documents', Buffer.from('%PDF-1.4 test'), {
         filename: 'test-document.pdf',
         contentType: 'application/pdf'
       });
 
     expect(upload.status).toBe(200);
-    expect(upload.body.message).toBe('Document uploaded successfully');
-    uploadedFileName = upload.body.document.filename;
+    expect(upload.body.message).toBe('Documents uploaded successfully');
+    uploadedFileName = upload.body.documents[0].filename;
 
     const download = await request(app).get(`/documents/${uploadedFileName}`);
     expect(download.status).toBe(200);

@@ -67,6 +67,13 @@
                         </div>
                         <button class="text-button" id="clear-search" type="button" hidden>Clear search</button>
                     </div>
+                    <div class="library-filters" id="library-filters" aria-label="Filter library">
+                        <button class="library-filter active" type="button" data-library-filter="all">All</button>
+                        <button class="library-filter" type="button" data-library-filter="video">Videos</button>
+                        <button class="library-filter" type="button" data-library-filter="audio">Audio</button>
+                        <button class="library-filter" type="button" data-library-filter="image">Images</button>
+                        <button class="library-filter" type="button" data-library-filter="document">Documents</button>
+                    </div>
                     <div class="status" id="status" role="status"></div>
                     <div class="media-grid" id="media-grid"></div>
                 </section>
@@ -93,13 +100,14 @@
                 <button class="upload-tab active" id="file-tab" type="button" role="tab" aria-selected="true">Choose file</button>
                 <button class="upload-tab" id="record-tab" type="button" role="tab" aria-selected="false">Record audio</button>
                 <button class="upload-tab" id="document-tab" type="button" role="tab" aria-selected="false">Document</button>
+                <button class="upload-tab" id="image-tab" type="button" role="tab" aria-selected="false">Images</button>
             </div>
             <div id="file-upload-panel" role="tabpanel" aria-labelledby="file-tab">
                 <label class="drop-zone" id="drop-zone" for="file-input">
-                    <input id="file-input" name="file" type="file" accept=".mp3,.mp4,.m4a,.wav,.webm,.ogg,.aac,.flac,audio/*,video/*">
+                    <input id="file-input" name="files" type="file" multiple accept=".mp3,.mp4,.m4a,.wav,.webm,.ogg,.aac,.flac,.mov,.avi,.mkv,audio/*,video/*">
                     <span class="upload-icon" aria-hidden="true">&#8593;</span>
-                    <strong id="file-label">Choose a song or media file</strong>
-                    <small>MP3, M4A, WAV, OGG, AAC, FLAC, MP4, or WebM</small>
+                    <strong id="file-label">Choose one or more audio/video files</strong>
+                    <small>MP3, M4A, WAV, OGG, AAC, FLAC, MP4, MOV, AVI, MKV, or WebM</small>
                 </label>
             </div>
             <div id="record-upload-panel" role="tabpanel" aria-labelledby="record-tab" hidden>
@@ -115,14 +123,22 @@
                         <button class="primary-button" id="stop-recording" type="button" disabled>Stop</button>
                     </div>
                 </div>
-                <div id="document-upload-panel" role="tabpanel" aria-labelledby="document-tab" hidden>
-                    <label class="drop-zone" id="document-drop-zone" for="document-input">
-                        <input id="document-input" name="document" type="file" accept=".pdf,.doc,.docx,.txt,.csv,.xls,.xlsx,.ppt,.pptx,.rtf,.jpg,.jpeg,.png,application/pdf">
-                        <span class="upload-icon" aria-hidden="true">&#9776;</span>
-                        <strong id="document-label">Choose a document</strong>
-                        <small>PDF, Word, Excel, PowerPoint, TXT, CSV, RTF, JPG, or PNG</small>
-                    </label>
-                </div>
+            </div>
+            <div id="document-upload-panel" role="tabpanel" aria-labelledby="document-tab" hidden>
+                <label class="drop-zone" id="document-drop-zone" for="document-input">
+                    <input id="document-input" name="documents" type="file" multiple accept=".pdf,.doc,.docx,.txt,.csv,.xls,.xlsx,.ppt,.pptx,.rtf">
+                    <span class="upload-icon" aria-hidden="true">&#9776;</span>
+                    <strong id="document-label">Choose one or more documents</strong>
+                    <small>PDF, Word, Excel, PowerPoint, TXT, CSV, or RTF</small>
+                </label>
+            </div>
+            <div id="image-upload-panel" role="tabpanel" aria-labelledby="image-tab" hidden>
+                <label class="drop-zone" id="image-drop-zone" for="image-input">
+                    <input id="image-input" name="images" type="file" multiple accept="image/jpeg,image/png,image/gif,image/webp,image/bmp,image/svg+xml,.jpg,.jpeg,.png,.gif,.webp,.bmp,.svg">
+                    <span class="upload-icon" aria-hidden="true">&#9635;</span>
+                    <strong id="image-label">Choose one or more images</strong>
+                    <small>JPG, JPEG, PNG, GIF, WebP, BMP, or SVG</small>
+                </label>
             </div>
             <div class="upload-progress" id="upload-progress" hidden>
                 <div class="progress-track"><span id="progress-bar"></span></div>

@@ -44,9 +44,11 @@ npm.cmd start
 | Method | Endpoint | Description |
 | --- | --- | --- |
 | `GET` | `/search?q=<text>` | Search the MongoDB `videos` collection by title |
-| `POST` | `/upload` | Upload one song, recording, or media file |
-| `POST` | `/upload/document` | Upload a PDF, Office, text, CSV, RTF, or image document |
-| `GET` | `/documents/:filename` | Download an uploaded document |
+| `POST` | `/upload` | Upload multiple songs or video files |
+| `POST` | `/upload/document` | Upload multiple PDF, Office, text, or CSV documents |
+| `POST` | `/upload/images` | Upload multiple images |
+| `GET` | `/documents/:filename` | Download or view an uploaded document |
+| `GET` | `/images/:filename` | View an uploaded image |
 | `GET` | `/stream/:filename` | Stream an uploaded file |
 | `GET` | `/:filename` | Serve an uploaded file directly |
 | `GET` | `/frontend/*` | Serve the responsive web frontend assets |

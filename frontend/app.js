@@ -21,8 +21,13 @@ const playerTitle = document.querySelector('#player-title');
 
 let recentUploads = loadRecentUploads();
 let droppedFile = null;
+let droppedFiles = [];
 let recordingFile = null;
 let documentFile = null;
+let documentFiles = [];
+let imageFile = null;
+let imageFiles = [];
+let activeLibraryFilter = 'all';
 let mediaRecorder = null;
 let recordingChunks = [];
 let recordingStream = null;
@@ -46,7 +51,18 @@ function isAudio(fileName) {
 }
 
 function isDocument(fileName) {
-    return /\.(pdf|doc|docx|txt|csv|xls|xlsx|ppt|pptx|rtf|jpg|jpeg|png)$/i.test(fileName);
+    return /\.(pdf|doc|docx|txt|csv|xls|xlsx|ppt|pptx|rtf)$/i.test(fileName);
+}
+
+function isImage(fileName) {
+    return /\.(jpg|jpeg|png|gif|webp|bmp|svg)$/i.test(fileName);
+}
+
+function getCategory(fileName) {
+    if (isImage(fileName)) return 'image';
+    if (isDocument(fileName)) return 'document';
+    if (isAudio(fileName)) return 'audio';
+    return 'video';
 }
 
 function escapeHtml(value) {
@@ -58,40 +74,55 @@ function escapeHtml(value) {
 function renderMedia(items) {
     mediaGrid.replaceChildren();
 
-    if (!items.length) {
+    const filteredItems = activeLibraryFilter === 'all'
+        ? items
+        : items.filter((item) => getCategory(item.filename || item.title || item.originalname || '') === activeLibraryFilter);
+
+    if (!filteredItems.length) {
         status.textContent = 'No media found.';
         return;
     }
 
-    status.textContent = `${items.length} item${items.length === 1 ? '' : 's'} found`;
+    status.textContent = `${filteredItems.length} item${filteredItems.length === 1 ? '' : 's'} found`;
 
-    items.forEach((item) => {
+    filteredItems.forEach((item) => {
         const name = item.filename || item.title || item.originalname || 'Untitled media';
-        const streamUrl = item.filename
-            ? (isDocument(item.filename)
-                ? `/documents/${encodeURIComponent(item.filename)}`
-                : `/stream/${encodeURIComponent(item.filename)}`)
-            : null;
+        const category = getCategory(name);
+        let streamUrl = null;
+        if (item.filename) {
+            if (category === 'document') streamUrl = `/documents/${encodeURIComponent(item.filename)}`;
+            else if (category === 'image') streamUrl = `/images/${encodeURIComponent(item.filename)}`;
+            else streamUrl = `/stream/${encodeURIComponent(item.filename)}`;
+        }
         const card = document.createElement('article');
         card.className = 'media-card';
 
         const preview = document.createElement('button');
         preview.type = 'button';
-        preview.className = `card-preview${isAudio(name) ? ' audio' : ''}`;
-        preview.textContent = isDocument(name) ? '\u9776' : isAudio(name) ? '\u266b' : '\u25b6';
-        preview.setAttribute('aria-label', isDocument(name) ? `Download ${name}` : `Play ${name}`);
+        preview.className = `card-preview${category === 'audio' ? ' audio' : ''}`;
+        preview.textContent = category === 'document' ? '\u9776' : category === 'image' ? '\u25a1' : category === 'audio' ? '\u266b' : '\u25b6';
+        preview.setAttribute('aria-label', `${category} ${name}`);
 
         const body = document.createElement('div');
         body.className = 'card-body';
-        body.innerHTML = `<strong title="${escapeHtml(name)}">${escapeHtml(name)}</strong><small>${isDocument(name) ? 'Document' : isAudio(name) ? 'Audio' : 'Video'}</small>`;
+        body.innerHTML = `<strong title="${escapeHtml(name)}">${escapeHtml(name)}</strong><small>${category[0].toUpperCase() + category.slice(1)}</small>`;
+
+        if (category === 'image' && streamUrl) {
+            preview.style.background = `center / cover no-repeat url("${streamUrl}")`;
+            preview.textContent = '';
+        }
 
         preview.addEventListener('click', () => {
             if (!streamUrl) {
                 status.textContent = 'This search result has no playable filename.';
                 return;
             }
-            if (isDocument(name)) {
+            if (category === 'document') {
                 window.open(streamUrl, '_blank', 'noopener');
+                return;
+            }
+            if (category === 'image') {
+                openImage(name, streamUrl);
                 return;
             }
             openPlayer(name, streamUrl);
@@ -106,6 +137,8 @@ function openPlayer(name, url) {
     playerTitle.textContent = name;
     videoPlayer.pause();
     audioPlayer.pause();
+    const imageViewer = document.querySelector('#image-viewer');
+    if (imageViewer) imageViewer.hidden = true;
 
     if (isAudio(name)) {
         videoPlayer.style.display = 'none';
@@ -119,6 +152,27 @@ function openPlayer(name, url) {
         videoPlayer.src = url;
     }
 
+    playerDialog.showModal();
+}
+
+function openImage(name, url) {
+    playerTitle.textContent = name;
+    videoPlayer.pause();
+    videoPlayer.removeAttribute('src');
+    videoPlayer.style.display = 'none';
+    audioPlayer.pause();
+    audioPlayer.removeAttribute('src');
+    audioPlayer.style.display = 'none';
+
+    let imageViewer = document.querySelector('#image-viewer');
+    if (!imageViewer) {
+        imageViewer = document.createElement('img');
+        imageViewer.id = 'image-viewer';
+        imageViewer.alt = name;
+        playerDialog.append(imageViewer);
+    }
+    imageViewer.src = url;
+    imageViewer.hidden = false;
     playerDialog.showModal();
 }
 
@@ -155,6 +209,15 @@ searchForm.addEventListener('submit', (event) => {
 clearSearch.addEventListener('click', () => {
     searchInput.value = '';
     showRecentUploads();
+});
+
+document.querySelectorAll('[data-library-filter]').forEach((button) => {
+    button.addEventListener('click', () => {
+        activeLibraryFilter = button.dataset.libraryFilter;
+        document.querySelectorAll('[data-library-filter]').forEach((item) => item.classList.remove('active'));
+        button.classList.add('active');
+        showRecentUploads();
+    });
 });
 
 document.querySelectorAll('[data-view]').forEach((button) => {
@@ -197,11 +260,15 @@ document.querySelector('#close-player').addEventListener('click', () => {
 const fileTab = document.querySelector('#file-tab');
 const recordTab = document.querySelector('#record-tab');
 const documentTab = document.querySelector('#document-tab');
+const imageTab = document.querySelector('#image-tab');
 const fileUploadPanel = document.querySelector('#file-upload-panel');
 const recordUploadPanel = document.querySelector('#record-upload-panel');
 const documentUploadPanel = document.querySelector('#document-upload-panel');
+const imageUploadPanel = document.querySelector('#image-upload-panel');
 const documentInput = document.querySelector('#document-input');
 const documentLabel = document.querySelector('#document-label');
+const imageInput = document.querySelector('#image-input');
+const imageLabel = document.querySelector('#image-label');
 const startRecording = document.querySelector('#start-recording');
 const stopRecording = document.querySelector('#stop-recording');
 const recordDot = document.querySelector('#record-dot');
@@ -212,25 +279,32 @@ const recordingPreview = document.querySelector('#recording-preview');
 function selectUploadMode(mode) {
     const recording = mode === 'record';
     const documentMode = mode === 'document';
+    const imageMode = mode === 'image';
     fileTab.classList.toggle('active', mode === 'file');
     recordTab.classList.toggle('active', recording);
     documentTab.classList.toggle('active', documentMode);
+    imageTab.classList.toggle('active', imageMode);
     fileTab.setAttribute('aria-selected', String(mode === 'file'));
     recordTab.setAttribute('aria-selected', String(recording));
     documentTab.setAttribute('aria-selected', String(documentMode));
+    imageTab.setAttribute('aria-selected', String(imageMode));
     fileUploadPanel.hidden = mode !== 'file';
     recordUploadPanel.hidden = !recording;
     documentUploadPanel.hidden = !documentMode;
+    imageUploadPanel.hidden = !imageMode;
     uploadSubmit.disabled = recording
         ? !recordingFile
         : documentMode
-            ? !documentFile
-            : !(droppedFile || fileInput.files[0]);
+            ? documentFiles.length === 0
+            : imageMode
+                ? imageFiles.length === 0
+                : droppedFiles.length === 0;
 }
 
 fileTab.addEventListener('click', () => selectUploadMode('file'));
 recordTab.addEventListener('click', () => selectUploadMode('record'));
 documentTab.addEventListener('click', () => selectUploadMode('document'));
+imageTab.addEventListener('click', () => selectUploadMode('image'));
 
 function updateRecordingTime() {
     const elapsed = Math.floor((Date.now() - recordingStartedAt) / 1000);
@@ -299,7 +373,10 @@ stopRecording.addEventListener('click', () => {
 fileInput.addEventListener('change', () => {
     if (!fileInput.files.length) return;
     droppedFile = null;
-    fileLabel.textContent = fileInput.files[0].name;
+    droppedFiles = Array.from(fileInput.files);
+    fileLabel.textContent = droppedFiles.length === 1
+        ? droppedFiles[0].name
+        : `${droppedFiles.length} files selected`;
     uploadSubmit.disabled = false;
 });
 
@@ -319,15 +396,20 @@ fileInput.addEventListener('change', () => {
 
 dropZone.addEventListener('drop', (event) => {
     if (!event.dataTransfer.files.length) return;
-    droppedFile = event.dataTransfer.files[0];
-    fileLabel.textContent = droppedFile.name;
+    droppedFiles = Array.from(event.dataTransfer.files);
+    fileLabel.textContent = droppedFiles.length === 1
+        ? droppedFiles[0].name
+        : `${droppedFiles.length} files selected`;
     uploadSubmit.disabled = false;
 });
 
 documentInput.addEventListener('change', () => {
     if (!documentInput.files.length) return;
     documentFile = documentInput.files[0];
-    documentLabel.textContent = documentFile.name;
+    documentFiles = Array.from(documentInput.files);
+    documentLabel.textContent = documentFiles.length === 1
+        ? documentFiles[0].name
+        : `${documentFiles.length} documents selected`;
     uploadSubmit.disabled = false;
 });
 
@@ -346,23 +428,72 @@ const documentDropZone = document.querySelector('#document-drop-zone');
 });
 documentDropZone.addEventListener('drop', (event) => {
     if (!event.dataTransfer.files.length) return;
-    documentFile = event.dataTransfer.files[0];
-    documentLabel.textContent = documentFile.name;
+    documentFiles = Array.from(event.dataTransfer.files);
+    documentLabel.textContent = documentFiles.length === 1
+        ? documentFiles[0].name
+        : `${documentFiles.length} documents selected`;
+    uploadSubmit.disabled = false;
+});
+
+const imageDropZone = document.querySelector('#image-drop-zone');
+
+imageInput.addEventListener('change', () => {
+    if (!imageInput.files.length) return;
+    imageFiles = Array.from(imageInput.files);
+    imageLabel.textContent = imageFiles.length === 1
+        ? imageFiles[0].name
+        : `${imageFiles.length} images selected`;
+    uploadSubmit.disabled = false;
+});
+
+['dragenter', 'dragover'].forEach((eventName) => {
+    imageDropZone.addEventListener(eventName, (event) => {
+        event.preventDefault();
+        imageDropZone.classList.add('dragging');
+    });
+});
+['dragleave', 'drop'].forEach((eventName) => {
+    imageDropZone.addEventListener(eventName, (event) => {
+        event.preventDefault();
+        imageDropZone.classList.remove('dragging');
+    });
+});
+imageDropZone.addEventListener('drop', (event) => {
+    if (!event.dataTransfer.files.length) return;
+    imageFiles = Array.from(event.dataTransfer.files);
+    imageLabel.textContent = imageFiles.length === 1
+        ? imageFiles[0].name
+        : `${imageFiles.length} images selected`;
     uploadSubmit.disabled = false;
 });
 
 uploadForm.addEventListener('submit', (event) => {
     event.preventDefault();
     const isDocumentUpload = documentTab.classList.contains('active');
-    const file = isDocumentUpload
-        ? documentFile
-        : recordingFile || droppedFile || fileInput.files[0];
-    if (!file) return;
+    const isImageUpload = imageTab.classList.contains('active');
+    const files = isDocumentUpload
+        ? documentFiles
+        : isImageUpload
+            ? imageFiles
+            : droppedFiles;
+
+    if (!recordingFile && !files.length) return;
 
     const formData = new FormData();
-    formData.append(isDocumentUpload ? 'document' : 'file', file);
+    if (recordingFile) {
+        formData.append('files', recordingFile);
+    } else {
+        files.forEach((file) => {
+            formData.append(isDocumentUpload ? 'documents' : isImageUpload ? 'images' : 'files', file);
+        });
+    }
+
     const xhr = new XMLHttpRequest();
-    xhr.open('POST', isDocumentUpload ? '/upload/document' : '/upload');
+    xhr.open('POST', isDocumentUpload
+        ? '/upload/document'
+        : isImageUpload
+            ? '/upload/images'
+            : '/upload');
 
     uploadSubmit.disabled = true;
     uploadProgress.hidden = false;
@@ -383,8 +514,9 @@ uploadForm.addEventListener('submit', (event) => {
         }
 
         if (xhr.status >= 200 && xhr.status < 300) {
-            const upload = result.document || result.file;
-            recentUploads = [upload, ...recentUploads.filter((item) => item.filename !== upload.filename)];
+            const uploads = result.documents || result.images || result.files || (result.file ? [result.file] : []);
+            const existingNames = new Set(uploads.map((item) => item.filename));
+            recentUploads = [...uploads, ...recentUploads.filter((item) => !existingNames.has(item.filename))];
             saveRecentUploads();
             progressLabel.textContent = 'Upload complete';
             progressBar.style.width = '100%';
@@ -394,8 +526,14 @@ uploadForm.addEventListener('submit', (event) => {
                 droppedFile = null;
                 recordingFile = null;
                 documentFile = null;
+                droppedFiles = [];
+                documentFiles = [];
+                imageFiles = [];
                 documentInput.value = '';
+                imageInput.value = '';
+                fileInput.value = '';
                 documentLabel.textContent = 'Choose a document';
+                imageLabel.textContent = 'Choose one or more images';
                 recordingPreview.removeAttribute('src');
                 recordingPreview.hidden = true;
                 fileLabel.textContent = 'Choose a media file';

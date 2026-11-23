@@ -9,7 +9,8 @@ const port = process.env.PORT || 3000;
 const uploadsDirectory = path.join(__dirname, 'uploads');
 const documentsDirectory = path.join(uploadsDirectory, 'documents');
 const mongoUri = 'mongodb://localhost:27017/streamingAPI';
-const mediaExtensions = new Set(['.mp3', '.m4a', '.wav', '.ogg', '.aac', '.flac', '.mp4', '.webm']);
+const mediaExtensions = new Set(['.mp3', '.m4a', '.wav', '.ogg', '.aac', '.flac', '.mp4', '.webm', '.mov', '.avi', '.mkv']);
+const imageExtensions = new Set(['.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp', '.svg']);
 const documentExtensions = new Map([
     ['.pdf', 'application/pdf'],
     ['.doc', 'application/msword'],
@@ -54,6 +55,18 @@ const upload = multer({
     }
 });
 
+const batchUpload = multer({
+    storage,
+    limits: { fileSize: 500 * 1024 * 1024, files: 20 },
+    fileFilter: (req, file, cb) => {
+        const extension = path.extname(file.originalname).toLowerCase();
+        if (!mediaExtensions.has(extension) || !/^(audio|video)\//.test(file.mimetype)) {
+            return cb(new multer.MulterError('LIMIT_UNEXPECTED_FILE', 'files'));
+        }
+        cb(null, true);
+    }
+});
+
 const documentStorage = multer.diskStorage({
     destination: (req, file, cb) => cb(null, documentsDirectory),
     filename: (req, file, cb) => {
@@ -69,6 +82,40 @@ const documentUpload = multer({
         const mimeAllowed = documentExtensions.has(extension);
         if (!mimeAllowed) {
             return cb(new multer.MulterError('LIMIT_UNEXPECTED_FILE', 'document'));
+        }
+        cb(null, true);
+    }
+});
+
+const imageDirectory = path.join(uploadsDirectory, 'images');
+fs.mkdirSync(imageDirectory, { recursive: true });
+
+const imageStorage = multer.diskStorage({
+    destination: (req, file, cb) => cb(null, imageDirectory),
+    filename: (req, file, cb) => {
+        cb(null, `${Date.now()}-${path.basename(file.originalname)}`);
+    }
+});
+
+const imageUpload = multer({
+    storage: imageStorage,
+    limits: { fileSize: 25 * 1024 * 1024, files: 30 },
+    fileFilter: (req, file, cb) => {
+        const extension = path.extname(file.originalname).toLowerCase();
+        if (!imageExtensions.has(extension) || !/^image\//.test(file.mimetype)) {
+            return cb(new multer.MulterError('LIMIT_UNEXPECTED_FILE', 'images'));
+        }
+        cb(null, true);
+    }
+});
+
+const batchDocumentUpload = multer({
+    storage: documentStorage,
+    limits: { fileSize: 100 * 1024 * 1024, files: 30 },
+    fileFilter: (req, file, cb) => {
+        const extension = path.extname(file.originalname).toLowerCase();
+        if (!documentExtensions.has(extension)) {
+            return cb(new multer.MulterError('LIMIT_UNEXPECTED_FILE', 'documents'));
         }
         cb(null, true);
     }
@@ -97,7 +144,10 @@ function getContentType(filePath) {
         '.webm': 'video/webm',
         '.ogg': 'audio/ogg',
         '.aac': 'audio/aac',
-        '.flac': 'audio/flac'
+        '.flac': 'audio/flac',
+        '.mov': 'video/quicktime',
+        '.avi': 'video/x-msvideo',
+        '.mkv': 'video/x-matroska'
     };
 
     return contentTypes[extension] || 'application/octet-stream';
@@ -141,7 +191,7 @@ app.get('/search', async (req, res) => {
 
 // File upload endpoint
 app.post('/upload', (req, res, next) => {
-    upload.single('file')(req, res, (error) => {
+    batchUpload.array('files', 20)(req, res, (error) => {
         if (error instanceof multer.MulterError) {
             const message = error.code === 'LIMIT_FILE_SIZE'
                 ? 'File is too large'
@@ -154,15 +204,15 @@ app.post('/upload', (req, res, next) => {
         next();
     });
 }, (req, res) => {
-    if (!req.file) {
-        return res.status(400).json({ error: 'A file is required' });
+    if (!req.files?.length) {
+        return res.status(400).json({ error: 'One or more files are required' });
     }
 
-    res.json({ message: 'File uploaded successfully', file: req.file });
+    res.json({ message: 'Files uploaded successfully', files: req.files });
 });
 
 app.post('/upload/document', (req, res, next) => {
-    documentUpload.single('document')(req, res, (error) => {
+    batchDocumentUpload.array('documents', 30)(req, res, (error) => {
         if (error instanceof multer.MulterError) {
             const message = error.code === 'LIMIT_FILE_SIZE'
                 ? 'Document is too large'
@@ -175,13 +225,37 @@ app.post('/upload/document', (req, res, next) => {
         next();
     });
 }, (req, res) => {
-    if (!req.file) {
-        return res.status(400).json({ error: 'A document is required' });
+    if (!req.files?.length) {
+        return res.status(400).json({ error: 'One or more documents are required' });
     }
 
     res.status(200).json({
-        message: 'Document uploaded successfully',
-        document: req.file
+        message: 'Documents uploaded successfully',
+        documents: req.files
+    });
+});
+
+app.post('/upload/images', (req, res, next) => {
+    imageUpload.array('images', 30)(req, res, (error) => {
+        if (error instanceof multer.MulterError) {
+            const message = error.code === 'LIMIT_FILE_SIZE'
+                ? 'Image is too large'
+                : 'Only supported image files are allowed';
+            return res.status(error.code === 'LIMIT_FILE_SIZE' ? 413 : 400).json({ error: message });
+        }
+        if (error) {
+            return res.status(400).json({ error: 'Image upload failed' });
+        }
+        next();
+    });
+}, (req, res) => {
+    if (!req.files?.length) {
+        return res.status(400).json({ error: 'One or more images are required' });
+    }
+
+    res.status(200).json({
+        message: 'Images uploaded successfully',
+        images: req.files
     });
 });
 
@@ -199,7 +273,43 @@ app.get('/documents/:filename', (req, res) => {
 
         res.set('Content-Type', documentExtensions.get(path.extname(fileName).toLowerCase()) ||
             'application/octet-stream');
-        return res.download(filePath, fileName);
+        if (req.query.download === '1') {
+            res.set('Content-Disposition', `attachment; filename="${fileName}"`);
+        } else {
+            res.set('Content-Disposition', `inline; filename="${fileName}"`);
+        }
+        return res.sendFile(filePath);
+    });
+
+    app.get('/images/:filename', (req, res) => {
+        const fileName = path.basename(req.params.filename);
+        if (fileName !== req.params.filename) {
+            return res.status(400).json({ error: 'Invalid image name' });
+        }
+
+        const filePath = path.join(imageDirectory, fileName);
+        fs.stat(filePath, (error, stat) => {
+            if (error || !stat.isFile()) {
+                return res.status(404).json({ error: 'Image not found' });
+            }
+
+            const contentType = {
+                '.jpg': 'image/jpeg',
+                '.jpeg': 'image/jpeg',
+                '.png': 'image/png',
+                '.gif': 'image/gif',
+                '.webp': 'image/webp',
+                '.bmp': 'image/bmp',
+                '.svg': 'image/svg+xml'
+            }[path.extname(fileName).toLowerCase()] || 'application/octet-stream';
+
+            res.set({
+                'Content-Type': contentType,
+                'Content-Length': stat.size,
+                'Cache-Control': 'public, max-age=86400'
+            });
+            return fs.createReadStream(filePath).pipe(res);
+        });
     });
 });
 

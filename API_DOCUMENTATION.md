@@ -66,7 +66,7 @@ POST /upload
 Content-Type: multipart/form-data
 ```
 
-Send the file in a multipart field named `file`.
+Send one or more files in a multipart field named `files`.
 
 Supported formats include MP3, M4A, WAV, OGG, AAC, FLAC, MP4, and WebM.
 Media files are limited to 500 MB. Browser recordings are uploaded as WebM,
